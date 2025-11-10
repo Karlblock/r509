@@ -1,0 +1,19 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}De Docker à Kubernetes}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Pourquoi Kubernetes ?}{2}{subsection.1.1}%
+\contentsline {section}{\numberline {2}Introduction à kubectl}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}De \texttt {docker} à \texttt {kubectl}}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Les commandes de base}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Les objets Kubernetes}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Namespaces}{4}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Architecture d'une application sur Kubernetes}{6}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Compute : Les Deployments}{6}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Storage : Les PersistentVolumeClaims}{8}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Networking : Services et Ingress}{10}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Les variables d'environnement et les Secrets}{12}{section.4}%
+\contentsline {section}{\numberline {5}Volumes et montages}{14}{section.5}%
+\contentsline {section}{\numberline {6}Labels et Selectors}{16}{section.6}%
+\contentsline {section}{\numberline {7}Exercice de synthèse - CORRECTION}{18}{section.7}%
+\contentsline {section}{\numberline {8}Questions de réflexion pour le TP - CORRECTIONS}{21}{section.8}%
+\contentsline {section}{\numberline {9}Questions supplémentaires sur l'Ingress}{22}{section.9}%
+\contentsline {section}{\numberline {10}Pour aller plus loin}{26}{section.10}%

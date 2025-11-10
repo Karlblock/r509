@@ -1,0 +1,533 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+
+% Configuration des listings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    commentstyle=\color{green!50!black},
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    language=bash
+}
+
+% En-tête et pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{TP Docker - Commandes de base}
+\rhead{IUT - R509}
+\cfoot{\thepage}
+
+\title{\textbf{Travaux Pratiques Docker}\\
+\large Découverte des commandes essentielles}
+\author{IUT - Module R509}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\vspace{1cm}
+
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Objectifs du TP]
+À la fin de ce TP, vous serez capable de :
+\begin{itemize}
+    \item Télécharger et gérer des images Docker
+    \item Créer et manipuler des conteneurs
+    \item Comprendre et utiliser le mapping de ports
+    \item Configurer et utiliser les registres Docker
+    \item Diagnostiquer des problèmes réseau Docker
+\end{itemize}
+\end{tcolorbox}
+
+\vspace{0.5cm}
+
+\begin{tcolorbox}[colback=orange!5!white,colframe=orange!75!black,title=Prérequis]
+\begin{itemize}
+    \item Docker installé sur votre machine
+    \item Accès à un terminal
+    \item Connexion Internet (pour télécharger les images)
+\end{itemize}
+\end{tcolorbox}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{Téléchargement d'images Docker}
+
+\subsection{Exercice 1 : Première image}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Téléchargez l'image officielle \texttt{hello-world} depuis Docker Hub.
+\end{tcolorbox}
+
+\textbf{Question 1.1 :} Quelle commande utilisez-vous ?
+
+\vspace{3cm}
+
+\textbf{Question 1.2 :} Que signifie le message "Using default tag: latest" ?
+
+\vspace{3cm}
+
+\subsection{Exercice 2 : Erreur courante - Nom d'image incorrect}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Un étudiant essaie de télécharger BusyBox avec la commande suivante :
+\begin{lstlisting}
+docker pull busy-box
+\end{lstlisting}
+Il obtient une erreur : \texttt{repository does not exist}.
+\end{tcolorbox}
+
+\textbf{Question 2.1 :} Quelle est l'erreur commise ?
+
+\vspace{3cm}
+
+\textbf{Question 2.2 :} Corrigez la commande pour télécharger BusyBox correctement.
+
+\vspace{3cm}
+
+\subsection{Exercice 3 : Télécharger Grafana}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Téléchargez l'image officielle de Grafana. Attention : l'image ne s'appelle pas simplement "grafana".
+\end{tcolorbox}
+
+\textbf{Question 3.1 :} Trouvez le nom complet de l'image Grafana et téléchargez-la.
+
+\vspace{3cm}
+
+\textbf{Question 3.2 :} Listez toutes les images présentes sur votre système.
+
+\vspace{3cm}
+
+\newpage
+
+\section{Gestion des conteneurs}
+
+\subsection{Exercice 4 : Lancer un premier conteneur}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Lancez le conteneur \texttt{hello-world} et observez le résultat.
+\end{tcolorbox}
+
+\textbf{Question 4.1 :} Quelle commande utilisez-vous ?
+
+\vspace{3cm}
+
+\textbf{Question 4.2 :} Listez tous les conteneurs (y compris ceux arrêtés). Quel est le statut du conteneur hello-world ?
+
+\vspace{3cm}
+
+\textbf{Question 4.3 :} Pourquoi le conteneur s'est-il arrêté immédiatement ?
+
+\vspace{3cm}
+
+\subsection{Exercice 5 : Comprendre le problème de BusyBox}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Lancez un conteneur BusyBox avec la commande :
+\begin{lstlisting}
+docker run busybox
+\end{lstlisting}
+Vérifiez ensuite les conteneurs en cours d'exécution.
+\end{tcolorbox}
+
+\textbf{Question 5.1 :} Le conteneur apparaît-il dans \texttt{docker ps} ?
+
+\vspace{3cm}
+
+\textbf{Question 5.2 :} Utilisez \texttt{docker ps -a}. Quel est le statut du conteneur ?
+
+\vspace{3cm}
+
+\textbf{Question 5.3 :} Expliquez pourquoi le conteneur s'est arrêté.
+
+\vspace{4cm}
+
+\textbf{Question 5.4 :} Comment lancer BusyBox de manière interactive pour obtenir un shell ?
+
+\vspace{3cm}
+
+\newpage
+
+\section{Mapping de ports}
+
+\subsection{Exercice 6 : Lancer Grafana avec mapping de ports}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Lancez un conteneur Grafana en mode détaché avec le mapping de ports approprié.
+Grafana écoute sur le port 3000 par défaut.
+\end{tcolorbox}
+
+\textbf{Question 6.1 :} Complétez la commande suivante :
+
+\begin{lstlisting}
+docker run ____ -p ________ --name=grafana ____________
+\end{lstlisting}
+
+\vspace{2cm}
+
+\textbf{Question 6.2 :} Expliquez chaque option utilisée dans votre commande :
+
+\begin{itemize}[leftmargin=3cm]
+    \item[\texttt{-d}] : \underline{\hspace{10cm}}
+    \vspace{0.5cm}
+    \item[\texttt{-p 3000:3000}] : \underline{\hspace{10cm}}
+    \vspace{0.5cm}
+    \item[\texttt{--name}] : \underline{\hspace{10cm}}
+\end{itemize}
+
+\vspace{1cm}
+
+\textbf{Question 6.3 :} Schématisez le mapping de ports entre votre machine hôte et le conteneur.
+
+\vspace{5cm}
+
+\subsection{Exercice 7 : Erreur de conflit de nom}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous essayez de lancer à nouveau Grafana avec la même commande et obtenez :
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+Error response from daemon: Conflict. The container name "/grafana"
+is already in use by container "bb6ecf43440f..."
+\end{lstlisting}
+\end{tcolorbox}
+
+\textbf{Question 7.1 :} Quelle est la cause de cette erreur ?
+
+\vspace{3cm}
+
+\textbf{Question 7.2 :} Donnez deux solutions possibles pour résoudre ce problème.
+
+\vspace{4cm}
+
+\newpage
+
+\subsection{Exercice 8 : Mapping de ports avancé}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous devez lancer Grafana, mais le port 3000 est déjà utilisé par une autre application.
+\end{tcolorbox}
+
+\textbf{Question 8.1 :} Modifiez la commande pour que Grafana soit accessible sur le port 8080 de votre machine hôte, tout en gardant le port 3000 dans le conteneur.
+
+\vspace{3cm}
+
+\textbf{Question 8.2 :} Quelle URL utiliserez-vous pour accéder à Grafana depuis votre navigateur ?
+
+\vspace{3cm}
+
+\subsection{Exercice 9 : Docker Registry}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Lancez un registre Docker local qui écoute sur le port 5001 de votre machine (car le port 5000 est déjà utilisé).
+\end{tcolorbox}
+
+\textbf{Question 9.1 :} Complétez la commande :
+
+\begin{lstlisting}
+docker run -d -p ________ --restart=always --name=registry _________
+\end{lstlisting}
+
+\vspace{2cm}
+
+\textbf{Question 9.2 :} Comment vérifier que le registre fonctionne avec \texttt{curl} ?
+
+\vspace{3cm}
+
+\newpage
+
+\section{Exploration de conteneurs}
+
+\subsection{Exercice 10 : Accéder à un conteneur en cours d'exécution}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Le conteneur Grafana est en cours d'exécution. Vous devez explorer son système de fichiers.
+\end{tcolorbox}
+
+\textbf{Question 10.1 :} Quelle commande permet d'exécuter une commande dans un conteneur en cours d'exécution ?
+
+\vspace{3cm}
+
+\textbf{Question 10.2 :} Exécutez la commande \texttt{ls -la /} dans le conteneur Grafana. Écrivez la commande complète.
+
+\vspace{3cm}
+
+\textbf{Question 10.3 :} Comment obtenir un shell interactif dans le conteneur Grafana ? (Indice : Grafana utilise Alpine Linux)
+
+\vspace{3cm}
+
+\subsection{Exercice 11 : Consulter les logs}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous devez consulter les logs du conteneur Grafana pour diagnostiquer un problème.
+\end{tcolorbox}
+
+\textbf{Question 11.1 :} Quelle commande permet d'afficher les logs d'un conteneur ?
+
+\vspace{3cm}
+
+\textbf{Question 11.2 :} Comment suivre les logs en temps réel (mode "follow") ?
+
+\vspace{3cm}
+
+\newpage
+
+\section{Configuration réseau Docker}
+
+\subsection{Exercice 12 : Identifier la plage réseau}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous devez identifier la plage réseau utilisée par le réseau bridge Docker par défaut.
+\end{tcolorbox}
+
+\textbf{Question 12.1 :} Listez tous les réseaux Docker sur votre système.
+
+\vspace{3cm}
+
+\textbf{Question 12.2 :} Inspectez le réseau \texttt{bridge} et trouvez la plage d'adresses IP (subnet) utilisée.
+
+\vspace{4cm}
+
+\subsection{Exercice 13 : Conflit de subnet}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Le réseau Docker bridge utilise 172.17.0.0/16, mais cette plage est déjà utilisée par votre réseau d'entreprise.
+Vous devez changer la configuration pour utiliser 10.10.0.0/16 à la place.
+\end{tcolorbox}
+
+\textbf{Question 13.1 :} Quel fichier devez-vous modifier ?
+
+\vspace{3cm}
+
+\textbf{Question 13.2 :} Écrivez la configuration JSON nécessaire pour utiliser la plage 10.10.0.0/16.
+
+\vspace{5cm}
+
+\textbf{Question 13.3 :} Quelle commande permet de redémarrer le service Docker après modification ?
+
+\vspace{3cm}
+
+\newpage
+
+\section{Registres Docker}
+
+\subsection{Exercice 14 : Comprendre les registres}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Répondez aux questions suivantes sur les registres Docker.
+\end{tcolorbox}
+
+\textbf{Question 14.1 :} Quel est le registre utilisé par défaut lorsque vous faites \texttt{docker pull nginx} ?
+
+\vspace{3cm}
+
+\textbf{Question 14.2 :} Réécrivez la commande \texttt{docker pull hello-world} avec le nom complet incluant le registre.
+
+\vspace{3cm}
+
+\textbf{Question 14.3 :} Citez trois autres registres publics de conteneurs (hors Docker Hub).
+
+\vspace{4cm}
+
+\subsection{Exercice 15 : Utiliser un registre local}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous avez un registre local qui tourne sur \texttt{localhost:5001}.
+Vous voulez y pousser l'image BusyBox.
+\end{tcolorbox}
+
+\textbf{Question 15.1 :} Taguez l'image \texttt{busybox} pour votre registre local.
+
+\vspace{3cm}
+
+\textbf{Question 15.2 :} Poussez l'image vers votre registre local.
+
+\vspace{3cm}
+
+\textbf{Question 15.3 :} Vérifiez que l'image est bien dans le registre avec \texttt{curl}.
+
+\vspace{3cm}
+
+\newpage
+
+\section{Diagnostic et résolution de problèmes}
+
+\subsection{Exercice 16 : Problème de permissions}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Un étudiant obtient l'erreur suivante :
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+Got permission denied while trying to connect to the Docker daemon
+socket at unix:///var/run/docker.sock
+\end{lstlisting}
+\end{tcolorbox}
+
+\textbf{Question 16.1 :} Quelle est la cause de ce problème ?
+
+\vspace{3cm}
+
+\textbf{Question 16.2 :} Donnez la solution permanente pour résoudre ce problème (sans utiliser sudo).
+
+\vspace{4cm}
+
+\subsection{Exercice 17 : Timeout réseau}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Lors d'un \texttt{docker pull}, vous obtenez :
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+Error response from daemon: Get "https://registry-1.docker.io/v2/":
+net/http: request canceled while waiting for connection
+\end{lstlisting}
+\end{tcolorbox}
+
+\textbf{Question 17.1 :} Listez trois diagnostics à effectuer pour identifier la cause.
+
+\vspace{5cm}
+
+\textbf{Question 17.2 :} Si le problème vient de DNS, comment configurer Docker pour utiliser les DNS de Google (8.8.8.8) ?
+
+\vspace{4cm}
+
+\newpage
+
+\section{Commandes de gestion}
+
+\subsection{Exercice 18 : Nettoyage}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous avez plusieurs conteneurs arrêtés qui prennent de l'espace disque.
+\end{tcolorbox}
+
+\textbf{Question 18.1 :} Comment supprimer un conteneur spécifique (exemple : ID = abc123) ?
+
+\vspace{3cm}
+
+\textbf{Question 18.2 :} Comment supprimer tous les conteneurs arrêtés en une seule commande ?
+
+\vspace{3cm}
+
+\textbf{Question 18.3 :} Comment supprimer une image Docker ?
+
+\vspace{3cm}
+
+\subsection{Exercice 19 : Monitoring}
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Énoncé]
+Vous devez surveiller l'utilisation des ressources de vos conteneurs.
+\end{tcolorbox}
+
+\textbf{Question 19.1 :} Quelle commande permet de voir en temps réel l'utilisation CPU/RAM de vos conteneurs ?
+
+\vspace{3cm}
+
+\textbf{Question 19.2 :} Comment voir les processus en cours d'exécution dans un conteneur nommé "grafana" ?
+
+\vspace{3cm}
+
+\newpage
+
+\section{Synthèse pratique}
+
+\subsection{Exercice 20 : Mini-projet complet}
+
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,title=Projet Final]
+Mettez en place l'infrastructure suivante :
+\begin{enumerate}
+    \item Un registre Docker local sur le port 5001
+    \item Un conteneur Grafana sur le port 3000
+    \item Un conteneur Nginx sur le port 8080
+    \item Tous les conteneurs doivent redémarrer automatiquement
+    \item Poussez l'image Nginx vers votre registre local
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Question 20.1 :} Écrivez toutes les commandes nécessaires dans l'ordre :
+
+\vspace{15cm}
+
+\textbf{Question 20.2 :} Comment vérifier que tout fonctionne correctement ?
+
+\vspace{5cm}
+
+\newpage
+
+\section{Annexes}
+
+\subsection{Aide-mémoire des commandes essentielles}
+
+\begin{tcolorbox}[colback=gray!5!white,colframe=gray!75!black,title=Gestion des images]
+\begin{lstlisting}
+docker images              # Lister les images
+docker pull <image>        # Télécharger une image
+docker rmi <image>         # Supprimer une image
+docker search <terme>      # Rechercher une image
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5!white,colframe=gray!75!black,title=Gestion des conteneurs]
+\begin{lstlisting}
+docker ps                  # Conteneurs actifs
+docker ps -a               # Tous les conteneurs
+docker run <image>         # Lancer un conteneur
+docker stop <container>    # Arrêter un conteneur
+docker start <container>   # Démarrer un conteneur
+docker rm <container>      # Supprimer un conteneur
+docker logs <container>    # Voir les logs
+docker exec <container> <cmd>  # Exécuter une commande
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5!white,colframe=gray!75!black,title=Options de docker run]
+\begin{lstlisting}
+-d                         # Mode détaché (arrière-plan)
+-p <host>:<container>      # Mapping de ports
+--name <nom>               # Nommer le conteneur
+-v <volume>:<path>         # Monter un volume
+-e <VAR=value>             # Variable d'environnement
+--restart always           # Redémarrage automatique
+-it                        # Mode interactif avec terminal
+--rm                       # Supprimer après arrêt
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=gray!5!white,colframe=gray!75!black,title=Réseau et diagnostic]
+\begin{lstlisting}
+docker network ls          # Lister les réseaux
+docker network inspect <network>  # Inspecter un réseau
+docker info                # Informations système
+docker stats               # Statistiques en temps réel
+docker port <container>    # Voir les ports mappés
+\end{lstlisting}
+\end{tcolorbox}
+
+\subsection{Format des noms d'images}
+
+\textbf{Structure} : \texttt{[registre/]organisation/dépôt[:tag]}
+
+\textbf{Exemples} :
+\begin{itemize}
+    \item \texttt{nginx} $\rightarrow$ \texttt{docker.io/library/nginx:latest}
+    \item \texttt{grafana/grafana} $\rightarrow$ \texttt{docker.io/grafana/grafana:latest}
+    \item \texttt{gcr.io/google-containers/busybox:1.27}
+    \item \texttt{localhost:5001/mon-image:v1}
+\end{itemize}
+
+\end{document}

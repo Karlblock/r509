@@ -1,0 +1,2115 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+
+\geometry{margin=2.5cm}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{correctionbg}{rgb}{0.9,1,0.9}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{TD02 - Kubernetes : Déploiement d'applications - \textbf{CORRECTION}}
+\rhead{IUT - R509}
+\cfoot{\thepage}
+
+\title{\textbf{TD02 - Kubernetes : Déploiement d'applications}\\
+\large Préparation au TP02\\
+\textcolor{red}{\Large VERSION PROFESSEUR - CORRECTION}}
+\author{Maxime Lambert\\BUT Informatique - Semestre 5 - Ressource R5.09}
+\date{2024/2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=ATTENTION]
+\textbf{Ce document contient les corrections des questions du TD02.}
+
+Il est destiné uniquement aux enseignants.
+\end{tcolorbox}
+
+\tableofcontents
+\newpage
+
+\section{De Docker à Kubernetes}
+
+\subsection{Pourquoi Kubernetes ?}
+
+Dans le TD01, vous avez appris à déployer des conteneurs Docker individuellement. Cependant, imaginez que vous devez :
+
+\begin{itemize}
+    \item Déployer une application composée de 10 microservices différents
+    \item Assurer la haute disponibilité avec plusieurs replicas de chaque service
+    \item Gérer automatiquement les redémarrages en cas de panne
+    \item Scaler automatiquement selon la charge
+    \item Mettre à jour vos applications sans interruption de service
+\end{itemize}
+
+\textbf{C'est là que Kubernetes intervient !}
+
+\section{Introduction à kubectl}
+
+\subsection{De \texttt{docker} à \texttt{kubectl}}
+
+Vous connaissez déjà les commandes Docker du TD01. Voici leur équivalent en Kubernetes :
+
+\begin{center}
+\begin{tabular}{|p{6cm}|p{6cm}|}
+\hline
+\textbf{Docker (TD01)} & \textbf{Kubernetes (TD02)} \\
+\hline
+\texttt{docker ps} & \texttt{kubectl get pods} \\
+\hline
+\texttt{docker images} & \texttt{kubectl get deployments} \\
+\hline
+\texttt{docker run nginx} & \texttt{kubectl create deployment nginx --image=nginx} \\
+\hline
+\texttt{docker logs <container>} & \texttt{kubectl logs <pod>} \\
+\hline
+\texttt{docker exec -it <container> sh} & \texttt{kubectl exec -it <pod> -- sh} \\
+\hline
+\texttt{docker rm <container>} & \texttt{kubectl delete pod <pod>} \\
+\hline
+\texttt{docker network ls} & \texttt{kubectl get services} \\
+\hline
+\texttt{docker volume ls} & \texttt{kubectl get pvc} \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Les commandes de base}
+
+La commande \texttt{kubectl} est l'outil principal pour interagir avec un cluster Kubernetes. Elle utilise une syntaxe de type \texttt{kubectl <verbe> <objet>}, similaire à \texttt{docker <objet> <commande>} que vous avez vu dans le TD01.
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 1]
+Associez chaque verbe kubectl à sa fonction :
+\begin{enumerate}[label=\alph*)]
+    \item \texttt{get}
+    \item \texttt{describe}
+    \item \texttt{apply}
+    \item \texttt{delete}
+    \item \texttt{logs}
+\end{enumerate}
+
+Fonctions :
+\begin{enumerate}[label=\Roman*.]
+    \item Afficher les détails complets d'une ressource
+    \item Supprimer une ressource
+    \item Appliquer une configuration depuis un fichier
+    \item Lister les ressources
+    \item Consulter les journaux d'un conteneur
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 1]
+\textbf{Associations correctes :}
+\begin{itemize}
+    \item a) \texttt{get} $\rightarrow$ IV. Lister les ressources
+    \item b) \texttt{describe} $\rightarrow$ I. Afficher les détails complets d'une ressource
+    \item c) \texttt{apply} $\rightarrow$ III. Appliquer une configuration depuis un fichier
+    \item d) \texttt{delete} $\rightarrow$ II. Supprimer une ressource
+    \item e) \texttt{logs} $\rightarrow$ V. Consulter les journaux d'un conteneur
+\end{itemize}
+
+\textbf{Explications complémentaires :}
+\begin{itemize}
+    \item \texttt{get} : Commande la plus utilisée pour lister les ressources (pods, services, deployments, etc.)
+    \item \texttt{describe} : Donne des informations détaillées incluant les événements récents
+    \item \texttt{apply} : Idempotent, peut être exécuté plusieurs fois (contrairement à \texttt{create})
+    \item \texttt{delete} : Suppression d'objets, avec gestion de la finalisation gracieuse
+    \item \texttt{logs} : Équivalent de \texttt{docker logs}, essentiel pour le debugging
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Les objets Kubernetes}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 2]
+Complétez le tableau suivant avec la description de chaque objet Kubernetes :
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 2]
+
+\begin{center}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Objet} & \textbf{Description} \\
+\hline
+Pod & \textbf{Plus petite unité déployable} dans Kubernetes. Contient un ou plusieurs conteneurs qui partagent le même réseau et le même stockage. Les conteneurs dans un Pod sont toujours co-localisés et co-schedulés. \\
+\hline
+Deployment & \textbf{Contrôleur déclaratif} pour les Pods et ReplicaSets. Permet de déclarer le nombre de replicas souhaités, gère les mises à jour progressives (rolling updates) et les rollbacks. \\
+\hline
+Service & \textbf{Abstraction réseau} qui définit un ensemble logique de Pods et une politique d'accès. Fournit une adresse IP stable et un nom DNS pour accéder aux Pods, même quand ils sont recréés. \\
+\hline
+Ingress & \textbf{Gestion du trafic HTTP/HTTPS externe} vers les Services. Fournit un routage basé sur les URL, l'équilibrage de charge, la terminaison SSL/TLS et le virtual hosting. \\
+\hline
+PersistentVolumeClaim & \textbf{Demande de stockage} par un utilisateur. Permet de réclamer un volume persistant avec des caractéristiques spécifiques (taille, mode d'accès, classe de stockage). \\
+\hline
+Secret & \textbf{Objet pour stocker des données sensibles} (mots de passe, tokens, clés). Encodé en base64 (non chiffré !). Peut être monté comme volume ou injecté comme variable d'environnement. \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Points clés à retenir :}
+\begin{itemize}
+    \item Pod = unité atomique (comme un conteneur Docker, mais peut en contenir plusieurs)
+    \item Deployment = gestion déclarative des Pods (équivalent de \texttt{docker-compose} mais plus puissant)
+    \item Service = point d'accès stable aux Pods (résout le problème des IPs changeantes)
+    \item Ingress = reverse proxy intelligent (comme Nginx/Traefik)
+    \item PVC = abstraction du stockage (découple l'application du fournisseur de stockage)
+    \item Secret = configuration sensible (à sécuriser avec des solutions comme Sealed Secrets ou Vault)
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Namespaces}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 3]
+\begin{enumerate}
+    \item Qu'est-ce qu'un namespace dans Kubernetes ?
+    \item Donnez deux exemples de namespaces système standard.
+    \item Pourquoi ne devrait-on pas déployer ses applications dans le namespace \texttt{default} ?
+    \item Quelle est la différence entre une ressource \textit{namespaced} et une ressource \textit{cluster-scoped} ?
+    \item Donnez un exemple de ressource cluster-scoped.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 3]
+
+\textbf{1. Qu'est-ce qu'un namespace dans Kubernetes ?}
+
+Un namespace est un \textbf{mécanisme d'isolation logique} qui permet de diviser les ressources d'un cluster entre plusieurs utilisateurs, équipes ou environnements. C'est comme créer des "espaces de noms" virtuels au sein d'un même cluster physique.
+
+\textbf{2. Deux exemples de namespaces système standard :}
+\begin{itemize}
+    \item \texttt{kube-system} : Contient les composants système de Kubernetes (kube-dns, kube-proxy, metrics-server, etc.)
+    \item \texttt{kube-public} : Namespace public lisible par tous, souvent utilisé pour des ConfigMaps publiques
+    \item \texttt{kube-node-lease} : Contient les objets Lease pour améliorer la performance du heartbeat des nodes
+\end{itemize}
+
+\textbf{3. Pourquoi éviter le namespace \texttt{default} ?}
+
+Raisons de ne pas utiliser \texttt{default} :
+\begin{itemize}
+    \item \textbf{Mauvaise pratique organisationnelle} : Tout se mélange, difficile de s'y retrouver
+    \item \textbf{Pas de séparation des environnements} : dev, staging, prod dans le même namespace
+    \item \textbf{Risque de conflits} : Noms de ressources qui se chevauchent
+    \item \textbf{Pas de gestion fine des quotas} : Impossible de limiter les ressources par équipe/projet
+    \item \textbf{Sécurité réduite} : Pas de RBAC granulaire possible
+\end{itemize}
+
+\textbf{Bonne pratique :} Créer des namespaces par :
+\begin{itemize}
+    \item Environnement : \texttt{dev}, \texttt{staging}, \texttt{production}
+    \item Équipe : \texttt{team-frontend}, \texttt{team-backend}, \texttt{team-data}
+    \item Application : \texttt{app-webshop}, \texttt{app-api}, \texttt{app-monitoring}
+\end{itemize}
+
+\textbf{4. Différence namespaced vs cluster-scoped :}
+
+\begin{itemize}
+    \item \textbf{Ressource namespaced} : Appartient à un namespace spécifique. Plusieurs ressources du même nom peuvent exister dans différents namespaces. Exemples : Pod, Service, Deployment, ConfigMap, Secret.
+
+    \item \textbf{Ressource cluster-scoped} : Unique au niveau du cluster entier. Pas de notion de namespace. Exemples : Node, PersistentVolume, Namespace, StorageClass, ClusterRole.
+\end{itemize}
+
+\textbf{5. Exemple de ressource cluster-scoped :}
+
+\texttt{Node} : Représente une machine physique ou virtuelle dans le cluster. Un nœud ne peut pas appartenir à un namespace car il sert tous les namespaces.
+
+Autres exemples : \texttt{PersistentVolume}, \texttt{StorageClass}, \texttt{ClusterRole}, \texttt{ClusterRoleBinding}, \texttt{Namespace} lui-même.
+
+\textbf{Commande pour vérifier :}
+\begin{lstlisting}[language=bash]
+# Lister les ressources namespaced
+kubectl api-resources --namespaced=true
+
+# Lister les ressources cluster-scoped
+kubectl api-resources --namespaced=false
+\end{lstlisting}
+\end{tcolorbox}
+
+\section{Architecture d'une application sur Kubernetes}
+
+\subsection{Compute : Les Deployments}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 4]
+En analysant le manifest ci-dessus :
+\begin{enumerate}
+    \item Quelle version de l'API Kubernetes est utilisée ?
+    \item Combien de replicas (copies) du Pod seront créés ?
+    \item Quel est le rôle du champ \texttt{selector.matchLabels} ?
+    \item Sur quel port le conteneur écoute-t-il ?
+    \item Que se passerait-il si vous supprimiez manuellement un des Pods créés par ce Deployment ?
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 4]
+
+\textbf{1. Version de l'API utilisée :}
+
+\texttt{apps/v1} - C'est l'API stable pour les Deployments, introduite dans Kubernetes 1.9.
+
+\textbf{2. Nombre de replicas :}
+
+\textbf{3 replicas} seront créés (défini par \texttt{spec.replicas: 3}).
+
+Kubernetes maintiendra toujours 3 Pods en cours d'exécution.
+
+\textbf{3. Rôle du champ \texttt{selector.matchLabels} :}
+
+Le \texttt{selector.matchLabels} permet au Deployment de \textbf{sélectionner quels Pods il doit gérer}.
+
+\begin{itemize}
+    \item Il fait correspondre les labels définis dans \texttt{template.metadata.labels}
+    \item Dans cet exemple : \texttt{app: mon-app}
+    \item Le Deployment surveillera tous les Pods ayant ce label
+    \item Il s'assurera qu'il y en a toujours exactement 3
+\end{itemize}
+
+\textbf{Important :} Les labels dans \texttt{selector.matchLabels} DOIVENT correspondre aux labels dans \texttt{template.metadata.labels}, sinon le Deployment sera invalide.
+
+\textbf{4. Port d'écoute du conteneur :}
+
+Le conteneur écoute sur le \textbf{port 80} (défini par \texttt{containerPort: 80}).
+
+Note : C'est le port INTERNE au conteneur. Il n'est pas automatiquement exposé à l'extérieur du cluster.
+
+\textbf{5. Suppression manuelle d'un Pod :}
+
+Si vous supprimez manuellement un des Pods :
+
+\begin{enumerate}
+    \item Le Deployment détecte immédiatement qu'il manque un Pod (il n'en reste que 2 au lieu de 3)
+    \item Le \textbf{ReplicaSet Controller} (géré par le Deployment) crée automatiquement un nouveau Pod
+    \item En quelques secondes, le cluster revient à l'état désiré : 3 Pods en cours d'exécution
+\end{enumerate}
+
+\textbf{Démonstration :}
+\begin{lstlisting}[language=bash]
+# Voir les pods
+kubectl get pods
+
+# Supprimer un pod
+kubectl delete pod mon-app-xxxxx
+
+# Relister immédiatement - un nouveau pod est en création
+kubectl get pods
+# Vous verrez un nouveau pod avec un nom différent
+\end{lstlisting}
+
+\textbf{C'est la magie de la déclaration d'état désiré !} Vous ne gérez plus des conteneurs individuellement (comme avec Docker), mais vous déclarez un état et Kubernetes le maintient automatiquement.
+\end{tcolorbox}
+
+\subsection{Storage : Les PersistentVolumeClaims}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 5]
+\begin{enumerate}
+    \item Expliquez la différence entre :
+    \begin{itemize}
+        \item PersistentVolume (PV)
+        \item PersistentVolumeClaim (PVC)
+        \item StorageClass
+    \end{itemize}
+    \item Pourquoi utilise-t-on un PVC plutôt que de stocker directement les données dans le conteneur ?
+    \item Que signifie le mode d'accès \texttt{ReadWriteOnce} ?
+    \item Citez deux autres modes d'accès possibles pour un volume.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 5]
+
+\textbf{1. Différences entre PV, PVC et StorageClass :}
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Objet} & \textbf{Description et rôle} \\
+\hline
+\textbf{PersistentVolume (PV)} &
+\textbf{Ressource de stockage physique} provisionnée par un administrateur ou dynamiquement par une StorageClass. Représente un volume réel sur le système de stockage (NFS, iSCSI, cloud provider, etc.). C'est une ressource \textbf{cluster-scoped}.
+\\
+\hline
+\textbf{PersistentVolumeClaim (PVC)} &
+\textbf{Demande de stockage} faite par un utilisateur/application. Spécifie la taille et le mode d'accès souhaités. Kubernetes cherche un PV correspondant et le "lie" au PVC. C'est une ressource \textbf{namespaced}.
+\\
+\hline
+\textbf{StorageClass} &
+\textbf{Modèle de provisionnement dynamique}. Définit les classes de stockage disponibles (SSD, HDD, cloud storage) et leur provisionneur. Permet de créer automatiquement des PV quand un PVC est créé. Ressource \textbf{cluster-scoped}.
+\\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Analogie immobilière :}
+\begin{itemize}
+    \item \textbf{StorageClass} = Type de construction (appartement standard, luxe, maison)
+    \item \textbf{PersistentVolume (PV)} = Logement physique disponible
+    \item \textbf{PersistentVolumeClaim (PVC)} = Demande de location avec critères spécifiques
+\end{itemize}
+
+\textbf{Workflow typique :}
+\begin{enumerate}
+    \item Un développeur crée un PVC demandant 5Gi de stockage
+    \item Si une StorageClass existe (avec provisionnement dynamique), elle crée automatiquement un PV de 5Gi
+    \item Le PV est "lié" au PVC
+    \item Le Pod monte le PVC comme volume
+\end{enumerate}
+
+\textbf{2. Pourquoi utiliser un PVC au lieu du stockage conteneur ?}
+
+Rappel du TD01 exercice 8 : les données dans un conteneur sont éphémères !
+
+\textbf{Raisons d'utiliser un PVC :}
+\begin{itemize}
+    \item \textbf{Persistance} : Les données survivent au redémarrage/suppression du Pod
+    \item \textbf{Découplage} : Le stockage est indépendant du cycle de vie du Pod
+    \item \textbf{Migration} : Les Pods peuvent être déplacés entre nœuds en conservant leurs données
+    \item \textbf{Partage} : Plusieurs Pods peuvent accéder au même volume (selon le mode d'accès)
+    \item \textbf{Sauvegarde/Snapshots} : Facilite la mise en place de stratégies de backup
+    \item \textbf{Performance} : Possibilité de choisir le type de stockage (SSD, HDD, etc.)
+\end{itemize}
+
+\textbf{Exemple concret :} Base de données PostgreSQL
+\begin{itemize}
+    \item SANS PVC : Si le Pod crash, toutes les données sont perdues !
+    \item AVEC PVC : Le nouveau Pod se reconnecte au même volume, les données sont intactes
+\end{itemize}
+
+\textbf{3. Signification de \texttt{ReadWriteOnce} :}
+
+\texttt{ReadWriteOnce (RWO)} signifie :
+\begin{itemize}
+    \item Le volume peut être monté en \textbf{lecture-écriture}
+    \item Par \textbf{UN SEUL nœud à la fois}
+    \item Plusieurs Pods sur le MÊME nœud peuvent l'utiliser simultanément
+    \item Mais pas par des Pods sur des nœuds différents
+\end{itemize}
+
+\textbf{Cas d'usage :} Bases de données traditionnelles (MySQL, PostgreSQL) qui ne supportent pas l'accès concurrent multi-nœuds.
+
+\textbf{4. Deux autres modes d'accès :}
+
+\begin{enumerate}
+    \item \textbf{ReadOnlyMany (ROX)} :
+    \begin{itemize}
+        \item Lecture seule
+        \item Peut être monté par plusieurs nœuds simultanément
+        \item Cas d'usage : Fichiers de configuration partagés, assets statiques
+    \end{itemize}
+
+    \item \textbf{ReadWriteMany (RWX)} :
+    \begin{itemize}
+        \item Lecture-écriture
+        \item Peut être monté par plusieurs nœuds simultanément
+        \item Nécessite un système de fichiers distribué (NFS, GlusterFS, CephFS)
+        \item Cas d'usage : Partage de fichiers entre microservices, stockage partagé d'uploads
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Récapitulatif :}
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{Mode} & \textbf{Lecture} & \textbf{Écriture} & \textbf{Multi-nœuds} \\
+\hline
+ReadWriteOnce (RWO) & Oui & Oui & Non \\
+\hline
+ReadOnlyMany (ROX) & Oui & Non & Oui \\
+\hline
+ReadWriteMany (RWX) & Oui & Oui & Oui \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Note importante :} Tous les fournisseurs de stockage ne supportent pas tous les modes. Par exemple, AWS EBS ne supporte que RWO.
+\end{tcolorbox}
+
+\subsection{Networking : Services et Ingress}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6]
+\begin{enumerate}
+    \item Expliquez pourquoi on a besoin d'un Service pour accéder à des Pods.
+    \item Quels sont les trois principaux types de Services dans Kubernetes ?
+    \item Quelle est la différence entre un Service de type \texttt{ClusterIP} et \texttt{NodePort} ?
+    \item À quoi sert un objet Ingress ?
+    \item Qu'est-ce qu'un Ingress Controller ? Donnez un exemple.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 6]
+
+\textbf{1. Pourquoi a-t-on besoin d'un Service ?}
+
+\textbf{Problème :} Les Pods dans Kubernetes sont \textbf{éphémères} :
+\begin{itemize}
+    \item Ils ont des adresses IP qui changent à chaque redémarrage
+    \item Ils peuvent être créés/détruits automatiquement par le Deployment
+    \item Un client ne peut pas savoir quelle IP utiliser
+\end{itemize}
+
+\textbf{Solution : Le Service}
+\begin{itemize}
+    \item Fournit une \textbf{adresse IP stable} (ClusterIP)
+    \item Fournit un \textbf{nom DNS} stable (ex: \texttt{mon-app.default.svc.cluster.local})
+    \item Fait du \textbf{load balancing} automatique entre tous les Pods correspondant au selector
+    \item Découvre automatiquement les nouveaux Pods et retire les Pods supprimés
+\end{itemize}
+
+\textbf{Analogie :} Un Service c'est comme le numéro de téléphone d'une entreprise :
+\begin{itemize}
+    \item Vous appelez toujours le même numéro (IP stable)
+    \item En interne, l'appel est routé vers un employé disponible (load balancing)
+    \item Si un employé part ou arrive, le numéro ne change pas (découverte automatique)
+\end{itemize}
+
+\textbf{2. Les trois principaux types de Services :}
+
+\begin{enumerate}
+    \item \textbf{ClusterIP} (par défaut) :
+    \begin{itemize}
+        \item Expose le Service sur une IP interne au cluster
+        \item Accessible uniquement depuis l'intérieur du cluster
+        \item Cas d'usage : Communication inter-services (backend $\leftrightarrow$ database)
+    \end{itemize}
+
+    \item \textbf{NodePort} :
+    \begin{itemize}
+        \item Expose le Service sur un port de chaque nœud (30000-32767)
+        \item Accessible depuis l'extérieur via \texttt{<NodeIP>:<NodePort>}
+        \item Crée aussi un ClusterIP automatiquement
+        \item Cas d'usage : Accès externe simple, environnements de développement
+    \end{itemize}
+
+    \item \textbf{LoadBalancer} :
+    \begin{itemize}
+        \item Provisionne un load balancer externe (cloud provider)
+        \item Obtient une IP publique externe
+        \item Crée aussi un NodePort et un ClusterIP automatiquement
+        \item Cas d'usage : Exposition de services en production sur le cloud
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Bonus : ExternalName}
+\begin{itemize}
+    \item Mappe un Service à un nom DNS externe
+    \item Pas de proxy, juste un alias CNAME
+    \item Cas d'usage : Accéder à des services externes (API, bases de données hébergées)
+\end{itemize}
+
+\textbf{3. Différence ClusterIP vs NodePort :}
+
+\begin{center}
+\begin{tabular}{|l|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspect} & \textbf{ClusterIP} & \textbf{NodePort} \\
+\hline
+Portée & Interne au cluster uniquement & Accessible depuis l'extérieur \\
+\hline
+IP & IP virtuelle interne & IP de chaque nœud + port \\
+\hline
+Port & Port standard (ex: 80, 3000) & Port haute numérotation (30000-32767) \\
+\hline
+Accès & \texttt{http://svc-name:80} & \texttt{http://<node-ip>:30123} \\
+\hline
+Sécurité & Plus sécurisé (pas exposé) & Moins sécurisé (exposé au monde) \\
+\hline
+Cas d'usage & Services internes (DB, cache) & Développement, tests \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Exemple visuel :}
+
+ClusterIP:
+\begin{lstlisting}
+Internet --> [BLOQUE]
+Cluster --> Service ClusterIP:80 --> Pods
+\end{lstlisting}
+
+NodePort:
+\begin{lstlisting}
+Internet --> Node:30123 --> Service NodePort:80 --> Pods
+\end{lstlisting}
+
+\textbf{4. À quoi sert un Ingress ?}
+
+Un Ingress est un \textbf{point d'entrée HTTP/HTTPS intelligent} pour votre cluster. C'est comme un reverse proxy (Nginx, Traefik) mais natif Kubernetes.
+
+\textbf{Fonctionnalités :}
+\begin{itemize}
+    \item \textbf{Routage basé sur l'URL} :
+    \begin{itemize}
+        \item \texttt{example.com/api} $\rightarrow$ Service API
+        \item \texttt{example.com/blog} $\rightarrow$ Service Blog
+    \end{itemize}
+
+    \item \textbf{Virtual hosting} (basé sur le nom d'hôte) :
+    \begin{itemize}
+        \item \texttt{api.example.com} $\rightarrow$ Service API
+        \item \texttt{blog.example.com} $\rightarrow$ Service Blog
+    \end{itemize}
+
+    \item \textbf{Terminaison SSL/TLS} : Gestion des certificats HTTPS
+
+    \item \textbf{Load balancing} : Distribution du trafic
+\end{itemize}
+
+\textbf{Comparaison avec le port mapping Docker (TD01) :}
+\begin{itemize}
+    \item Docker : \texttt{-p 8080:80} $\rightarrow$ Mapping simple 1:1, pas de routage intelligent
+    \item Ingress : Routage complexe basé sur les règles HTTP, gestion centralisée
+\end{itemize}
+
+\textbf{Exemple d'Ingress :}
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  rules:
+  - host: api.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 80
+  - host: blog.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: blog-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\textbf{5. Qu'est-ce qu'un Ingress Controller ?}
+
+L'Ingress est juste une \textbf{définition/configuration}. L'Ingress Controller est le \textbf{composant qui l'implémente réellement}.
+
+\textbf{Analogie :}
+\begin{itemize}
+    \item Ingress = Plan architectural d'une maison
+    \item Ingress Controller = L'entreprise de construction qui réalise le plan
+\end{itemize}
+
+\textbf{Comment ça fonctionne :}
+\begin{enumerate}
+    \item Vous créez un objet Ingress (YAML)
+    \item L'Ingress Controller le détecte
+    \item Il configure le reverse proxy selon les règles
+    \item Le trafic HTTP/HTTPS est routé vers les bons Services
+\end{enumerate}
+
+\textbf{Exemples d'Ingress Controllers :}
+
+\begin{enumerate}
+    \item \textbf{NGINX Ingress Controller} :
+    \begin{itemize}
+        \item Le plus populaire
+        \item Basé sur Nginx
+        \item Supporte toutes les fonctionnalités avancées
+        \item Installation : \texttt{kubectl apply -f nginx-ingress-controller.yaml}
+    \end{itemize}
+
+    \item \textbf{Traefik} :
+    \begin{itemize}
+        \item Interface web de monitoring
+        \item Auto-découverte des services
+        \item Excellent pour les microservices
+    \end{itemize}
+
+    \item \textbf{HAProxy Ingress}
+
+    \item \textbf{Kong Ingress}
+
+    \item \textbf{Contour (Envoy-based)}
+
+    \item \textbf{Cloud provider specifics} :
+    \begin{itemize}
+        \item AWS ALB Ingress Controller
+        \item GKE Ingress (GCP)
+        \item Azure Application Gateway Ingress
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Important :} Contrairement aux autres objets Kubernetes, l'Ingress nécessite qu'un Ingress Controller soit installé dans le cluster. Sans lui, vos objets Ingress ne font rien !
+
+\textbf{Vérification :}
+\begin{lstlisting}[language=bash]
+# Vérifier si un Ingress Controller est installé
+kubectl get pods -n ingress-nginx
+# ou
+kubectl get ingressclass
+\end{lstlisting}
+\end{tcolorbox}
+
+\section{Les variables d'environnement et les Secrets}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 7]
+\begin{enumerate}
+    \item Quelle est la différence entre définir une valeur directement avec \texttt{value} et utiliser \texttt{valueFrom} ?
+    \item Dans quel cas devriez-vous utiliser un Secret plutôt qu'une valeur en clair ?
+    \item Le Secret Kubernetes utilise l'encodage base64. Est-ce un chiffrement sécurisé ? Pourquoi ?
+    \item Proposez une solution pour améliorer la sécurité des Secrets dans Kubernetes.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 7]
+
+\textbf{1. Différence entre \texttt{value} et \texttt{valueFrom} :}
+
+\textbf{Avec \texttt{value} (valeur directe) :}
+\begin{lstlisting}[language=yaml]
+env:
+- name: DATABASE_URL
+  value: "postgres://db:5432/mydb"
+\end{lstlisting}
+
+\begin{itemize}
+    \item La valeur est \textbf{écrite en dur} dans le manifest
+    \item Visible dans le YAML du Deployment
+    \item \textbf{Problème} : Pas de séparation configuration/code
+    \item \textbf{Problème} : Difficile de changer sans redéployer
+    \item \textbf{Problème} : Risque de commit de secrets dans Git !
+\end{itemize}
+
+\textbf{Avec \texttt{valueFrom} (référence externe) :}
+\begin{lstlisting}[language=yaml]
+env:
+- name: PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: db-secret
+      key: password
+\end{lstlisting}
+
+\begin{itemize}
+    \item La valeur provient d'une \textbf{source externe} (Secret ou ConfigMap)
+    \item Le Deployment ne contient qu'une \textbf{référence}
+    \item \textbf{Avantage} : Séparation configuration/déploiement
+    \item \textbf{Avantage} : Peut changer le Secret sans modifier le Deployment
+    \item \textbf{Avantage} : Le secret n'est jamais dans le manifeste
+\end{itemize}
+
+\textbf{Autres sources possibles avec \texttt{valueFrom} :}
+\begin{itemize}
+    \item \texttt{configMapKeyRef} : Depuis un ConfigMap
+    \item \texttt{fieldRef} : Depuis les métadonnées du Pod (nom, namespace, IP)
+    \item \texttt{resourceFieldRef} : Depuis les limites de ressources
+\end{itemize}
+
+\textbf{2. Quand utiliser un Secret ?}
+
+\textbf{Utilisez un Secret pour :}
+\begin{itemize}
+    \item \textbf{Mots de passe} de bases de données
+    \item \textbf{Tokens API} et clés d'accès
+    \item \textbf{Certificats TLS/SSL}
+    \item \textbf{Clés SSH}
+    \item \textbf{Credentials OAuth}
+    \item \textbf{Registry credentials} (pour pull des images privées)
+\end{itemize}
+
+\textbf{Utilisez un ConfigMap pour :}
+\begin{itemize}
+    \item Configuration applicative non sensible
+    \item Fichiers de configuration (nginx.conf, etc.)
+    \item Variables d'environnement publiques
+    \item Feature flags
+\end{itemize}
+
+\textbf{Règle d'or :} Si vous ne voudriez pas que cette valeur soit visible dans les logs ou dans Git, utilisez un Secret !
+
+\textbf{3. Base64 est-il un chiffrement sécurisé ?}
+
+\textbf{NON ! Base64 n'est PAS un chiffrement !}
+
+\textbf{Base64 est seulement un ENCODAGE :}
+\begin{itemize}
+    \item Convertit des données binaires en texte ASCII
+    \item \textbf{Facilement décodable} : \texttt{echo "cGFzc3dvcmQ=" | base64 -d} $\rightarrow$ \texttt{password}
+    \item N'offre \textbf{AUCUNE sécurité}
+    \item C'est juste pour éviter les problèmes de caractères spéciaux
+\end{itemize}
+
+\textbf{Démonstration :}
+\begin{lstlisting}[language=bash]
+# Encoder
+echo -n "mon-super-secret" | base64
+# Résultat: bW9uLXN1cGVyLXNlY3JldA==
+
+# Décoder (trivial !)
+echo "bW9uLXN1cGVyLXNlY3JldA==" | base64 -d
+# Résultat: mon-super-secret
+\end{lstlisting}
+
+\textbf{Risques :}
+\begin{itemize}
+    \item Tout utilisateur avec accès au cluster peut lire les Secrets
+    \item Secrets visibles via \texttt{kubectl get secret -o yaml}
+    \item Secrets stockés en clair dans etcd (par défaut)
+    \item Backups d'etcd contiennent les secrets en clair
+\end{itemize}
+
+\textbf{4. Solutions pour améliorer la sécurité :}
+
+\textbf{a) Chiffrement au repos dans etcd :}
+\begin{lstlisting}[language=yaml]
+# /etc/kubernetes/enc/encryption-config.yaml
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: <base64-encoded-32-byte-key>
+    - identity: {}
+\end{lstlisting}
+
+\textbf{b) Sealed Secrets (Bitnami) :}
+\begin{itemize}
+    \item Chiffre les secrets avec une clé publique
+    \item Peut être stocké dans Git en toute sécurité
+    \item Déchiffré uniquement par le controller dans le cluster
+\end{itemize}
+
+\begin{lstlisting}[language=bash]
+# Créer un sealed secret
+kubectl create secret generic mysecret --dry-run=client \
+  --from-literal=password=supersecret -o yaml | \
+  kubeseal -o yaml > mysealedsecret.yaml
+
+# Le fichier peut être commité dans Git !
+git add mysealedsecret.yaml
+\end{lstlisting}
+
+\textbf{c) External Secrets Operator :}
+\begin{itemize}
+    \item Intégration avec des gestionnaires de secrets externes
+    \item HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, GCP Secret Manager
+    \item Les secrets ne sont jamais stockés dans Kubernetes
+\end{itemize}
+
+\textbf{d) HashiCorp Vault :}
+\begin{itemize}
+    \item Solution de gestion de secrets dédiée
+    \item Chiffrement, rotation automatique, audit
+    \item Injection directe dans les Pods via sidecar
+\end{itemize}
+
+\textbf{e) RBAC strict :}
+\begin{itemize}
+    \item Limiter qui peut lire les Secrets
+    \item Principe du moindre privilège
+\end{itemize}
+
+\begin{lstlisting}[language=yaml]
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-reader
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["specific-secret-only"]
+  verbs: ["get"]
+\end{lstlisting}
+
+\textbf{Recommandation pour la production :}
+\begin{enumerate}
+    \item Activer le chiffrement etcd (minimum)
+    \item Utiliser Sealed Secrets ou External Secrets
+    \item Pour les environnements critiques : Vault
+    \item Toujours appliquer un RBAC strict
+    \item Auditer régulièrement les accès
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Volumes et montages}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 8]
+\begin{enumerate}
+    \item Expliquez le rôle de la section \texttt{volumes}.
+    \item Expliquez le rôle de la section \texttt{volumeMounts}.
+    \item Que se passe-t-il si le PVC \texttt{my-pvc} n'existe pas ?
+    \item Pourquoi les données stockées dans \texttt{/data} persistent-elles alors que celles stockées ailleurs dans le conteneur sont perdues ?
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 8]
+
+\textbf{1. Rôle de la section \texttt{volumes} :}
+
+La section \texttt{volumes} \textbf{déclare les sources de stockage} disponibles pour le Pod.
+
+\begin{itemize}
+    \item Définit \textbf{QUOI} monter (le volume source)
+    \item Peut référencer différents types : PVC, ConfigMap, Secret, emptyDir, hostPath, etc.
+    \item Donne un \textbf{nom local} au volume dans le Pod
+    \item N'effectue pas encore le montage (c'est juste une déclaration)
+\end{itemize}
+
+\textbf{Types de volumes possibles :}
+\begin{lstlisting}[language=yaml]
+volumes:
+# Depuis un PVC
+- name: data
+  persistentVolumeClaim:
+    claimName: my-pvc
+
+# Depuis un ConfigMap
+- name: config
+  configMap:
+    name: my-config
+
+# Depuis un Secret
+- name: credentials
+  secret:
+    secretName: my-secret
+
+# Volume temporaire (vide au démarrage)
+- name: cache
+  emptyDir: {}
+
+# Dossier de l'hôte (dangereux !)
+- name: host-data
+  hostPath:
+    path: /data
+    type: Directory
+\end{lstlisting}
+
+\textbf{2. Rôle de la section \texttt{volumeMounts} :}
+
+La section \texttt{volumeMounts} \textbf{monte effectivement les volumes dans le conteneur}.
+
+\begin{itemize}
+    \item Définit \textbf{OÙ} monter dans le système de fichiers du conteneur
+    \item Référence un volume déclaré dans \texttt{volumes} par son nom
+    \item Spécifie le chemin de montage (\texttt{mountPath})
+    \item Peut définir des options (lecture seule, sous-chemin, etc.)
+\end{itemize}
+
+\textbf{Exemple complet :}
+\begin{lstlisting}[language=yaml]
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - name: storage-volume      # Référence le volume "storage-volume"
+      mountPath: /data           # Monte dans /data du conteneur
+      readOnly: false            # Lecture-écriture
+    - name: config-volume
+      mountPath: /etc/nginx/nginx.conf
+      subPath: nginx.conf        # Monte seulement un fichier
+      readOnly: true
+
+  volumes:
+  - name: storage-volume         # Déclaration du volume
+    persistentVolumeClaim:
+      claimName: my-pvc
+  - name: config-volume
+    configMap:
+      name: nginx-config
+\end{lstlisting}
+
+\textbf{Relation volumes $\leftrightarrow$ volumeMounts :}
+\begin{itemize}
+    \item \texttt{volumes} : "J'ai ces sources de données disponibles"
+    \item \texttt{volumeMounts} : "Je monte cette source à cet endroit précis"
+\end{itemize}
+
+\textbf{3. Que se passe-t-il si le PVC n'existe pas ?}
+
+Si le PVC \texttt{my-pvc} n'existe pas :
+
+\textbf{Phase 1 - Création du Pod :}
+\begin{itemize}
+    \item Le Pod est créé mais reste en état \texttt{Pending}
+    \item Status : \texttt{ContainerCreating}
+    \item Le scheduler ne peut pas démarrer le conteneur
+\end{itemize}
+
+\textbf{Phase 2 - Événements d'erreur :}
+\begin{lstlisting}[language=bash]
+kubectl describe pod <pod-name>
+# Events:
+# Warning  FailedMount  persistentvolumeclaim "my-pvc" not found
+\end{lstlisting}
+
+\textbf{Phase 3 - Le Pod attend indéfiniment :}
+\begin{itemize}
+    \item Kubernetes continue d'essayer de monter le volume
+    \item Le Pod ne démarre jamais
+    \item Reste en état Pending jusqu'à ce que :
+    \begin{itemize}
+        \item Le PVC soit créé
+        \item Ou le Pod soit supprimé
+    \end{itemize}
+\end{itemize}
+
+\textbf{Résolution :}
+\begin{lstlisting}[language=bash]
+# Créer le PVC manquant
+kubectl apply -f my-pvc.yaml
+
+# Le Pod démarre automatiquement
+kubectl get pods  # Status devient Running
+\end{lstlisting}
+
+\textbf{Bonne pratique :}
+\begin{itemize}
+    \item Créer les PVC \textbf{AVANT} les Deployments
+    \item Ou utiliser un outil comme Helm qui gère l'ordre de création
+\end{itemize}
+
+\textbf{4. Pourquoi la persistance fonctionne dans /data mais pas ailleurs ?}
+
+\textbf{Rappel du TD01 :} Les données dans un conteneur sont éphémères par défaut !
+
+\textbf{Explication technique :}
+
+\textbf{Dans /data (avec volume monté) :}
+\begin{itemize}
+    \item \texttt{/data} pointe vers le PVC
+    \item Le PVC pointe vers un PersistentVolume
+    \item Le PV est du stockage \textbf{externe au conteneur}
+    \item Stocké sur le nœud, sur un NAS, sur le cloud, etc.
+    \item \textbf{Survit au cycle de vie du conteneur/Pod}
+\end{itemize}
+
+\begin{lstlisting}
+Conteneur : /data --> PVC --> PV --> Disque physique/cloud
+                                     (PERSISTENT)
+\end{lstlisting}
+
+\textbf{Ailleurs dans le conteneur (ex: /tmp, /var) :}
+\begin{itemize}
+    \item Fait partie du \textbf{système de fichiers du conteneur}
+    \item Stocké dans la couche writable du conteneur
+    \item Existe uniquement en mémoire ou sur le disque temporaire du nœud
+    \item \textbf{Supprimé quand le conteneur est supprimé}
+\end{itemize}
+
+\begin{lstlisting}
+Conteneur : /tmp --> Couche writable conteneur
+                     (EPHEMERE - détruit avec le conteneur)
+\end{lstlisting}
+
+\textbf{Analogie :}
+\begin{itemize}
+    \item \textbf{Volume monté (/data)} = Disque dur externe USB
+    \begin{itemize}
+        \item Vous pouvez le débrancher et le rebrancher sur un autre ordinateur
+        \item Les données restent
+    \end{itemize}
+
+    \item \textbf{Système de fichiers conteneur (/tmp)} = RAM
+    \begin{itemize}
+        \item Quand vous éteignez l'ordinateur, tout est perdu
+    \end{itemize}
+\end{itemize}
+
+\textbf{Démonstration pratique :}
+\begin{lstlisting}[language=bash]
+# Créer un fichier dans /data (volume)
+kubectl exec -it pod-name -- sh -c "echo 'persistent' > /data/file.txt"
+
+# Créer un fichier dans /tmp (éphémère)
+kubectl exec -it pod-name -- sh -c "echo 'ephemeral' > /tmp/file.txt"
+
+# Supprimer et recréer le Pod
+kubectl delete pod pod-name
+# Attendre qu'il redémarre
+
+# Vérifier /data
+kubectl exec -it pod-name -- cat /data/file.txt
+# Résultat: persistent (fichier toujours là !)
+
+# Vérifier /tmp
+kubectl exec -it pod-name -- cat /tmp/file.txt
+# Résultat: cat: /tmp/file.txt: No such file or directory
+\end{lstlisting}
+
+\textbf{Cas d'usage typiques :}
+\begin{itemize}
+    \item \textbf{À persister (utiliser un volume)} :
+    \begin{itemize}
+        \item Données de base de données (/var/lib/mysql)
+        \item Uploads utilisateurs (/uploads)
+        \item Logs applicatifs à conserver (/var/log/app)
+        \item État de l'application (/var/state)
+    \end{itemize}
+
+    \item \textbf{Peut être éphémère (pas de volume)} :
+    \begin{itemize}
+        \item Caches temporaires (/tmp)
+        \item Fichiers de build (/build)
+        \item Fichiers de pid/lock (/var/run)
+    \end{itemize}
+\end{itemize}
+\end{tcolorbox}
+
+\section{Labels et Selectors}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 9]
+Considérez le Deployment et le Service. Questions :
+\begin{enumerate}
+    \item Le Service pourra-t-il router le trafic vers les Pods créés par ce Deployment ? Pourquoi ?
+    \item Que se passerait-il si le Service utilisait le selector \texttt{tier: web} au lieu de \texttt{app: frontend} ?
+    \item Proposez une commande kubectl pour lister uniquement les Pods ayant le label \texttt{app=frontend}.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 9]
+
+\textbf{1. Le Service peut-il router vers les Pods ?}
+
+\textbf{OUI}, le Service pourra router le trafic vers les Pods créés par ce Deployment.
+
+\textbf{Explication :}
+
+Le Service utilise le selector :
+\begin{lstlisting}[language=yaml]
+selector:
+  app: frontend
+\end{lstlisting}
+
+Les Pods créés par le Deployment ont les labels :
+\begin{lstlisting}[language=yaml]
+labels:
+  app: frontend
+  tier: web
+\end{lstlisting}
+
+\textbf{Règle de matching :}
+\begin{itemize}
+    \item Un Pod correspond au selector si \textbf{tous les labels du selector} sont présents sur le Pod
+    \item Le Pod peut avoir \textbf{plus de labels} que demandé par le selector
+    \item Ici : Le Pod a \texttt{app: frontend} $\checkmark$ donc il match !
+\end{itemize}
+
+\textbf{Fonctionnement :}
+\begin{enumerate}
+    \item Le Service cherche tous les Pods ayant \texttt{app: frontend}
+    \item Il trouve les 3 Pods du Deployment (ils ont tous ce label)
+    \item Il crée des endpoints vers ces Pods
+    \item Il fait du load balancing entre ces 3 Pods
+\end{enumerate}
+
+\textbf{Vérification :}
+\begin{lstlisting}[language=bash]
+# Voir les endpoints du Service
+kubectl get endpoints frontend-service
+
+# Résultat attendu : 3 adresses IP (une par Pod)
+NAME               ENDPOINTS
+frontend-service   10.244.0.5:80,10.244.0.6:80,10.244.0.7:80
+\end{lstlisting}
+
+\textbf{2. Que se passerait-il avec selector \texttt{tier: web} ?}
+
+Si le Service utilisait :
+\begin{lstlisting}[language=yaml]
+selector:
+  tier: web
+\end{lstlisting}
+
+\textbf{Résultat : Le Service fonctionnerait AUSSI !}
+
+\textbf{Pourquoi ?}
+\begin{itemize}
+    \item Les Pods ont le label \texttt{tier: web}
+    \item Le selector cherche \texttt{tier: web}
+    \item Les Pods correspondent donc au critère
+\end{itemize}
+
+\textbf{MAIS... Différence importante :}
+
+\textbf{Avec \texttt{app: frontend} (spécifique) :}
+\begin{itemize}
+    \item Sélectionne UNIQUEMENT les Pods de cette application
+    \item Précis et sûr
+    \item Best practice
+\end{itemize}
+
+\textbf{Avec \texttt{tier: web} (générique) :}
+\begin{itemize}
+    \item Sélectionne \textbf{TOUS} les Pods web du namespace
+    \item Si vous avez d'autres apps avec \texttt{tier: web}, elles seront aussi sélectionnées !
+    \item Peut causer du trafic vers les mauvais Pods
+    \item \textbf{Dangereux en production}
+\end{itemize}
+
+\textbf{Exemple de problème :}
+\begin{lstlisting}[language=yaml]
+# Deployment 1: Frontend
+labels:
+  app: frontend
+  tier: web
+
+# Deployment 2: Admin Panel
+labels:
+  app: admin
+  tier: web
+
+# Service avec selector tier: web
+# --> Route le trafic vers FRONTEND ET ADMIN !
+# --> ERREUR : mélange de deux applications différentes
+\end{lstlisting}
+
+\textbf{Best practice :}
+\begin{itemize}
+    \item Utiliser des labels \textbf{spécifiques à l'application} (\texttt{app: xxx})
+    \item Les labels génériques (\texttt{tier}, \texttt{environment}) sont pour l'organisation, pas pour le routing
+    \item Combiner plusieurs labels si nécessaire : \texttt{app: frontend, version: v2}
+\end{itemize}
+
+\textbf{3. Commande pour lister les Pods avec label \texttt{app=frontend} :}
+
+\textbf{Commande :}
+\begin{lstlisting}[language=bash]
+kubectl get pods -l app=frontend
+\end{lstlisting}
+
+\textbf{ou équivalent :}
+\begin{lstlisting}[language=bash]
+kubectl get pods --selector app=frontend
+kubectl get pods --selector=app=frontend
+\end{lstlisting}
+
+\textbf{Sortie attendue :}
+\begin{lstlisting}
+NAME                        READY   STATUS    RESTARTS   AGE
+frontend-xxxxx-abcde        1/1     Running   0          5m
+frontend-xxxxx-fghij        1/1     Running   0          5m
+frontend-xxxxx-klmno        1/1     Running   0          5m
+\end{lstlisting}
+
+\textbf{Variantes utiles :}
+\begin{lstlisting}[language=bash]
+# Lister avec plusieurs labels (AND)
+kubectl get pods -l app=frontend,tier=web
+
+# Lister avec exclusion (NOT)
+kubectl get pods -l app=frontend,tier!=backend
+
+# Lister avec valeurs multiples (IN)
+kubectl get pods -l 'app in (frontend,backend)'
+
+# Lister les Pods SANS un label
+kubectl get pods -l '!app'
+
+# Afficher aussi les labels dans la sortie
+kubectl get pods -l app=frontend --show-labels
+
+# Format large pour plus d'infos
+kubectl get pods -l app=frontend -o wide
+\end{lstlisting}
+
+\textbf{Utilité des label selectors :}
+\begin{itemize}
+    \item Debugging : Trouver rapidement les Pods d'une app
+    \item Operations : Supprimer tous les Pods d'un environnement
+    \item Monitoring : Filtrer les métriques par application
+    \item Scaling : Vérifier le nombre de replicas
+\end{itemize}
+
+\textbf{Exemples pratiques :}
+\begin{lstlisting}[language=bash]
+# Supprimer tous les Pods de l'environnement dev
+kubectl delete pods -l environment=dev
+
+# Voir les logs de tous les Pods frontend
+kubectl logs -l app=frontend --tail=10
+
+# Port-forward vers un Pod spécifique
+kubectl port-forward $(kubectl get pod -l app=frontend -o name | head -1) 8080:80
+
+# Surveiller les Pods d'une version spécifique
+kubectl get pods -l app=frontend,version=v2 -w
+\end{lstlisting}
+\end{tcolorbox}
+
+\section{Exercice de synthèse - CORRECTION}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Exercice pratique sur papier]
+Vous devez déployer une application web simple composée de :
+\begin{itemize}
+    \item Un frontend Nginx (3 replicas)
+    \item Un backend Node.js (2 replicas)
+    \item Une base de données PostgreSQL (1 replica avec stockage persistant)
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Exercice de synthèse]
+
+\textbf{1. Schéma de l'architecture :}
+
+\begin{verbatim}
+                          Internet
+                             |
+                        [Ingress]
+                         nginx-controller
+                             |
+                    +--------+--------+
+                    |                 |
+          [Service: frontend]   [Service: backend]
+            ClusterIP              ClusterIP
+                    |                 |
+         +----------+------+    +-----+------+
+         |          |      |    |            |
+    [Pod: nginx] x3         [Pod: node.js] x2
+         |                       |
+         +----------+------------+
+                    |
+          [Service: postgres]
+             ClusterIP
+                    |
+              [Pod: PostgreSQL]
+                    |
+              [PVC: db-data]
+                    |
+         [PersistentVolume: 5Gi]
+\end{verbatim}
+
+\textbf{2. Liste complète des objets Kubernetes nécessaires :}
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{N°} & \textbf{Type} & \textbf{Nom} \\
+\hline
+1 & Namespace & web-app \\
+\hline
+2 & Deployment & frontend-deployment \\
+\hline
+3 & Service & frontend-service \\
+\hline
+4 & Deployment & backend-deployment \\
+\hline
+5 & Service & backend-service \\
+\hline
+6 & StatefulSet & postgres-statefulset \\
+\hline
+7 & Service & postgres-service \\
+\hline
+8 & PersistentVolumeClaim & postgres-pvc \\
+\hline
+9 & Secret & postgres-credentials \\
+\hline
+10 & ConfigMap & backend-config \\
+\hline
+11 & Ingress & web-app-ingress \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{3. Détail de chaque objet :}
+
+\textbf{Objet 1: Namespace}
+\begin{itemize}
+    \item Type : Namespace
+    \item Nom : \texttt{web-app}
+    \item Rôle : Isoler l'application, gérer les ressources et les permissions
+    \item Interactions : Contient tous les autres objets
+\end{itemize}
+
+\textbf{Objet 2: Frontend Deployment}
+\begin{itemize}
+    \item Type : Deployment
+    \item Nom : \texttt{frontend-deployment}
+    \item Rôle : Gérer 3 replicas de Nginx, assurer la haute disponibilité
+    \item Interactions :
+    \begin{itemize}
+        \item Crée 3 Pods Nginx
+        \item Sélectionné par frontend-service via labels
+        \item Communique avec backend-service pour les appels API
+    \end{itemize}
+    \item Configuration : Image nginx, port 80, variables d'env pour l'URL du backend
+\end{itemize}
+
+\textbf{Objet 3: Frontend Service}
+\begin{itemize}
+    \item Type : Service (ClusterIP)
+    \item Nom : \texttt{frontend-service}
+    \item Rôle : Point d'accès stable aux Pods frontend, load balancing
+    \item Interactions :
+    \begin{itemize}
+        \item Sélectionne les Pods frontend via labels (app: frontend)
+        \item Cible de l'Ingress pour le routage HTTP
+    \end{itemize}
+    \item Configuration : Port 80, selector \texttt{app: frontend}
+\end{itemize}
+
+\textbf{Objet 4: Backend Deployment}
+\begin{itemize}
+    \item Type : Deployment
+    \item Nom : \texttt{backend-deployment}
+    \item Rôle : Gérer 2 replicas Node.js, traiter la logique métier
+    \item Interactions :
+    \begin{itemize}
+        \item Crée 2 Pods Node.js
+        \item Sélectionné par backend-service
+        \item Se connecte à postgres-service pour accéder à la DB
+        \item Utilise postgres-credentials Secret
+        \item Utilise backend-config ConfigMap
+    \end{itemize}
+    \item Configuration : Image node, port 3000, env vars depuis Secret et ConfigMap
+\end{itemize}
+
+\textbf{Objet 5: Backend Service}
+\begin{itemize}
+    \item Type : Service (ClusterIP)
+    \item Nom : \texttt{backend-service}
+    \item Rôle : Accès interne au backend depuis le frontend
+    \item Interactions :
+    \begin{itemize}
+        \item Sélectionne les Pods backend (app: backend)
+        \item Appelé par les Pods frontend
+    \end{itemize}
+    \item Configuration : Port 3000, selector \texttt{app: backend}
+\end{itemize}
+
+\textbf{Objet 6: PostgreSQL StatefulSet}
+\begin{itemize}
+    \item Type : StatefulSet (plutôt que Deployment pour une DB)
+    \item Nom : \texttt{postgres-statefulset}
+    \item Rôle : Gérer la base de données avec identité stable
+    \item Interactions :
+    \begin{itemize}
+        \item Crée 1 Pod PostgreSQL
+        \item Monte le volume postgres-pvc
+        \item Utilise postgres-credentials pour le mot de passe
+        \item Exposé via postgres-service
+    \end{itemize}
+    \item Configuration : Image postgres, port 5432, volume mount /var/lib/postgresql/data
+\end{itemize}
+
+\textbf{Objet 7: PostgreSQL Service}
+\begin{itemize}
+    \item Type : Service (ClusterIP) - Headless possible
+    \item Nom : \texttt{postgres-service}
+    \item Rôle : DNS stable pour accéder à PostgreSQL
+    \item Interactions :
+    \begin{itemize}
+        \item Sélectionne le Pod PostgreSQL
+        \item Utilisé par backend pour la connexion DB
+    \end{itemize}
+    \item Configuration : Port 5432, selector \texttt{app: postgres}
+\end{itemize}
+
+\textbf{Objet 8: PostgreSQL PVC}
+\begin{itemize}
+    \item Type : PersistentVolumeClaim
+    \item Nom : \texttt{postgres-pvc}
+    \item Rôle : Demander du stockage persistant pour les données DB
+    \item Interactions :
+    \begin{itemize}
+        \item Lié à un PersistentVolume (auto-provisionné ou préexistant)
+        \item Monté par le Pod PostgreSQL
+    \end{itemize}
+    \item Configuration : 5Gi, ReadWriteOnce, StorageClass standard
+\end{itemize}
+
+\textbf{Objet 9: PostgreSQL Credentials Secret}
+\begin{itemize}
+    \item Type : Secret
+    \item Nom : \texttt{postgres-credentials}
+    \item Rôle : Stocker le mot de passe PostgreSQL de manière sécurisée
+    \item Interactions :
+    \begin{itemize}
+        \item Utilisé par le Pod PostgreSQL (POSTGRES\_PASSWORD)
+        \item Utilisé par les Pods backend (DATABASE\_PASSWORD)
+    \end{itemize}
+    \item Configuration : Keys: username, password, database
+\end{itemize}
+
+\textbf{Objet 10: Backend ConfigMap}
+\begin{itemize}
+    \item Type : ConfigMap
+    \item Nom : \texttt{backend-config}
+    \item Rôle : Configuration applicative du backend
+    \item Interactions : Monté comme variables d'env dans backend Pods
+    \item Configuration : DATABASE\_HOST, DATABASE\_PORT, API\_TIMEOUT, etc.
+\end{itemize}
+
+\textbf{Objet 11: Ingress}
+\begin{itemize}
+    \item Type : Ingress
+    \item Nom : \texttt{web-app-ingress}
+    \item Rôle : Routage HTTP externe vers l'application
+    \item Interactions :
+    \begin{itemize}
+        \item Route / vers frontend-service
+        \item Route /api vers backend-service (optionnel)
+    \end{itemize}
+    \item Configuration :
+    \begin{itemize}
+        \item Host: myapp.example.com
+        \item Path / $\rightarrow$ frontend-service:80
+        \item Path /api $\rightarrow$ backend-service:3000
+        \item Annotations pour certificat SSL (cert-manager)
+    \end{itemize}
+\end{itemize}
+
+\textbf{4. Flux de données - Requête utilisateur $\rightarrow$ Base de données :}
+
+\textbf{Scénario : Un utilisateur charge la page web}
+
+\begin{enumerate}
+    \item \textbf{Utilisateur} tape \texttt{https://myapp.example.com} dans son navigateur
+
+    \item \textbf{DNS} résout vers l'IP du Load Balancer / Ingress Controller
+
+    \item \textbf{Ingress Controller} (ex: Nginx Ingress) :
+    \begin{itemize}
+        \item Reçoit la requête HTTP
+        \item Lit les règles de l'Ingress
+        \item Route vers \texttt{frontend-service:80}
+    \end{itemize}
+
+    \item \textbf{Frontend Service} :
+    \begin{itemize}
+        \item Fait du load balancing entre les 3 Pods frontend
+        \item Choisit un Pod (round-robin ou autre algorithme)
+        \item Envoie la requête au Pod sélectionné
+    \end{itemize}
+
+    \item \textbf{Pod Frontend (Nginx)} :
+    \begin{itemize}
+        \item Sert le HTML/CSS/JS statique
+        \item Le JavaScript fait une requête AJAX vers \texttt{/api/data}
+    \end{itemize}
+
+    \item \textbf{Requête API} : Le navigateur fait une requête à \texttt{myapp.example.com/api/data}
+
+    \item \textbf{Ingress Controller} route \texttt{/api/*} vers \texttt{backend-service:3000}
+
+    \item \textbf{Backend Service} :
+    \begin{itemize}
+        \item Load balancing entre les 2 Pods backend
+        \item Sélectionne un Pod Node.js
+    \end{itemize}
+
+    \item \textbf{Pod Backend (Node.js)} :
+    \begin{itemize}
+        \item Reçoit la requête API
+        \item Lit les credentials depuis le Secret
+        \item Lit la config (host DB) depuis le ConfigMap
+        \item Se connecte à \texttt{postgres-service:5432}
+    \end{itemize}
+
+    \item \textbf{PostgreSQL Service} :
+    \begin{itemize}
+        \item Résout le DNS vers l'IP du Pod PostgreSQL
+        \item Route la connexion TCP vers le Pod
+    \end{itemize}
+
+    \item \textbf{Pod PostgreSQL} :
+    \begin{itemize}
+        \item Authentifie avec le mot de passe du Secret
+        \item Exécute la requête SQL : \texttt{SELECT * FROM users}
+        \item Lit les données depuis \texttt{/var/lib/postgresql/data}
+        \item Ce répertoire est monté sur le PVC (stockage persistant)
+    \end{itemize}
+
+    \item \textbf{PVC / PersistentVolume} :
+    \begin{itemize}
+        \item Accède au disque physique/cloud
+        \item Retourne les données
+    \end{itemize}
+
+    \item \textbf{Retour des données} :
+    \begin{itemize}
+        \item PostgreSQL Pod $\rightarrow$ Backend Pod (résultat SQL)
+        \item Backend Pod $\rightarrow$ Frontend (JSON via HTTP)
+        \item Frontend $\rightarrow$ Navigateur (affichage)
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Flux résumé :}
+\begin{verbatim}
+User Browser
+    |
+    v
+Ingress (myapp.example.com)
+    |
+    +-- / --> Frontend Service --> Nginx Pod (HTML)
+    |
+    +-- /api --> Backend Service --> Node.js Pod
+                                        |
+                                        v
+                                  Postgres Service
+                                        |
+                                        v
+                                  PostgreSQL Pod
+                                        |
+                                        v
+                                  PVC --> PV --> Disk
+\end{verbatim}
+
+\textbf{Points clés à retenir :}
+\begin{itemize}
+    \item Les Services assurent la stabilité des adresses
+    \item L'Ingress gère le routage HTTP intelligent
+    \item Les Secrets protègent les informations sensibles
+    \item Les PVC permettent la persistance des données
+    \item Les labels/selectors lient tous les composants
+\end{itemize}
+\end{tcolorbox}
+
+\section{Questions de réflexion pour le TP - CORRECTIONS}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTIONS - Préparation au TP02]
+
+\textbf{1. Comment vérifier que tous les Pods d'un Deployment sont en état Running ?}
+
+\begin{lstlisting}[language=bash]
+# Méthode 1 : Vérifier le statut du Deployment
+kubectl get deployment <nom-deployment>
+# Observer: READY 3/3 signifie 3 Pods sur 3 sont prêts
+
+# Méthode 2 : Lister les Pods du Deployment
+kubectl get pods -l app=<nom-app>
+
+# Méthode 3 : Describe le Deployment pour voir les détails
+kubectl describe deployment <nom-deployment>
+
+# Méthode 4 : Watch en temps réel
+kubectl get pods -l app=<nom-app> -w
+\end{lstlisting}
+
+\textbf{2. Quelle commande pour consulter les logs d'un Pod qui redémarre en boucle ?}
+
+\begin{lstlisting}[language=bash]
+# Voir les logs de l'instance actuelle
+kubectl logs <nom-pod>
+
+# IMPORTANT : Voir les logs de l'instance PRECEDENTE (crash loop)
+kubectl logs <nom-pod> --previous
+
+# Suivre les logs en temps réel
+kubectl logs <nom-pod> -f
+
+# Si plusieurs conteneurs dans le Pod
+kubectl logs <nom-pod> -c <nom-conteneur> --previous
+\end{lstlisting}
+
+\textbf{3. Comment accéder à une application via Ingress avec hostname mon-app.local ?}
+
+\begin{lstlisting}[language=bash]
+# 1. Modifier le fichier /etc/hosts
+sudo nano /etc/hosts
+
+# Ajouter cette ligne (remplacer IP par celle de votre cluster)
+127.0.0.1  mon-app.local
+# ou
+<IP-NODE>  mon-app.local
+
+# 2. Accéder via navigateur
+http://mon-app.local
+
+# 3. Ou via curl
+curl http://mon-app.local
+\end{lstlisting}
+
+\textbf{4. Si vous supprimez un Pod, que devient son PersistentVolume ?}
+
+\textbf{Réponse :} Le PersistentVolume \textbf{reste intact} et les données sont préservées.
+
+\begin{itemize}
+    \item Le Pod est supprimé
+    \item Le PVC reste (pas supprimé automatiquement)
+    \item Le PV reste lié au PVC
+    \item Les données sur le disque sont intactes
+    \item Quand un nouveau Pod est créé, il se reconnecte au même PVC/PV
+    \item Les données sont récupérées
+\end{itemize}
+
+\textbf{5. Comment modifier le nombre de replicas d'un Deployment ?}
+
+\begin{lstlisting}[language=bash]
+# Méthode 1 : kubectl scale (impératif)
+kubectl scale deployment <nom-deployment> --replicas=5
+
+# Méthode 2 : kubectl edit (modifier le YAML)
+kubectl edit deployment <nom-deployment>
+# Changer spec.replicas: 5
+
+# Méthode 3 : kubectl patch
+kubectl patch deployment <nom-deployment> -p '{"spec":{"replicas":5}}'
+
+# Méthode 4 : Modifier le fichier YAML et apply (déclaratif)
+# Éditer deployment.yaml
+# replicas: 5
+kubectl apply -f deployment.yaml
+\end{lstlisting}
+
+\textbf{6. Différence entre kubectl apply et kubectl create ?}
+
+\begin{center}
+\begin{tabular}{|l|p{5cm}|p{5cm}|}
+\hline
+\textbf{Aspect} & \textbf{kubectl create} & \textbf{kubectl apply} \\
+\hline
+Philosophie & Impératif & Déclaratif \\
+\hline
+Première fois & Crée la ressource & Crée la ressource \\
+\hline
+Si existe déjà & \textbf{ERREUR} & \textbf{Met à jour} \\
+\hline
+Idempotence & Non & Oui \\
+\hline
+Gestion & Pas de tracking des changements & Track l'état dans annotations \\
+\hline
+Utilisation & Commandes one-shot, tests & Production, GitOps, CI/CD \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{Exemples :}
+\begin{lstlisting}[language=bash]
+# create : Échoue si existe déjà
+kubectl create -f deployment.yaml
+# Error: deployments.apps "my-app" already exists
+
+# apply : Met à jour si existe
+kubectl apply -f deployment.yaml
+# deployment.apps/my-app configured
+\end{lstlisting}
+
+\textbf{Best practice :} Toujours utiliser \texttt{apply} en production !
+\end{tcolorbox}
+
+\section{Questions supplémentaires sur l'Ingress}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6 bis - Analyse d'Ingress]
+En analysant le manifest Ingress :
+\begin{enumerate}
+    \item Quelle est la version de l'API utilisée pour l'Ingress ?
+    \item Quel hostname est configuré pour accéder à l'application ?
+    \item Vers quel Service le trafic sera-t-il routé ?
+    \item Que signifie \texttt{pathType: Prefix} ?
+    \item Comment pourriez-vous ajouter le support HTTPS à cet Ingress ?
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 6 bis]
+
+\textbf{1. Version de l'API utilisée :}
+
+\texttt{networking.k8s.io/v1} - C'est l'API stable pour les Ingress depuis Kubernetes 1.19.
+
+\textbf{Historique :}
+\begin{itemize}
+    \item Avant K8s 1.19 : \texttt{extensions/v1beta1} (obsolète)
+    \item K8s 1.19+ : \texttt{networking.k8s.io/v1} (actuelle)
+\end{itemize}
+
+\textbf{2. Hostname configuré :}
+
+\texttt{mon-app.local} - C'est le nom de domaine pour accéder à l'application.
+
+\textbf{Pour tester localement :}
+\begin{lstlisting}[language=bash]
+# Ajouter dans /etc/hosts
+echo "127.0.0.1  mon-app.local" | sudo tee -a /etc/hosts
+
+# Puis accéder via navigateur
+curl http://mon-app.local
+\end{lstlisting}
+
+\textbf{3. Routage du trafic :}
+
+Le trafic sera routé vers le Service \texttt{frontend-service} sur le port \texttt{80}.
+
+\textbf{Flux complet :}
+\begin{verbatim}
+Utilisateur (http://mon-app.local)
+    |
+    v
+Ingress Controller (Nginx)
+    |
+    v
+Service: frontend-service:80
+    |
+    v
+Pods du Deployment frontend
+\end{verbatim}
+
+\textbf{4. Signification de \texttt{pathType: Prefix} :}
+
+\texttt{pathType: Prefix} signifie que l'Ingress matchera toutes les URLs qui \textbf{commencent} par le chemin spécifié.
+
+\textbf{Types de pathType disponibles :}
+
+\begin{itemize}
+    \item \textbf{Prefix} : Correspond à tout chemin commençant par le préfixe
+    \begin{lstlisting}
+path: /api
+pathType: Prefix
+Matches:
+    /api         ✓
+    /api/users   ✓
+    /api/v1/data ✓
+    /application ✗
+    \end{lstlisting}
+
+    \item \textbf{Exact} : Correspond exactement au chemin spécifié
+    \begin{lstlisting}
+path: /api
+pathType: Exact
+Matches:
+    /api         ✓
+    /api/        ✗ (différent !)
+    /api/users   ✗
+    \end{lstlisting}
+
+    \item \textbf{ImplementationSpecific} : Dépend de l'Ingress Controller
+\end{itemize}
+
+\textbf{Exemple avec path: /}
+\begin{lstlisting}[language=yaml]
+- path: /
+  pathType: Prefix
+  # Matche TOUTES les URLs (/, /home, /api, /anything)
+\end{lstlisting}
+
+\textbf{5. Ajouter le support HTTPS :}
+
+\textbf{Méthode 1 : Certificat TLS manuel}
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mon-app-ingress
+spec:
+  tls:
+  - hosts:
+    - mon-app.local
+    secretName: mon-app-tls-secret
+  rules:
+  - host: mon-app.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\textbf{Créer le Secret TLS :}
+\begin{lstlisting}[language=bash]
+# Avec certificat existant
+kubectl create secret tls mon-app-tls-secret \
+  --cert=path/to/cert.crt \
+  --key=path/to/cert.key
+
+# Avec openssl (auto-signé pour dev)
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout tls.key -out tls.crt -subj "/CN=mon-app.local"
+
+kubectl create secret tls mon-app-tls-secret \
+  --cert=tls.crt --key=tls.key
+\end{lstlisting}
+
+\textbf{Méthode 2 : Cert-manager (automatique - RECOMMANDÉ)}
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mon-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+  - hosts:
+    - mon-app.example.com
+    secretName: mon-app-tls-auto  # Créé automatiquement !
+  rules:
+  - host: mon-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\textbf{Avantages cert-manager :}
+\begin{itemize}
+    \item Génération automatique de certificats Let's Encrypt
+    \item Renouvellement automatique avant expiration
+    \item Pas de gestion manuelle
+\end{itemize}
+
+\textbf{Installation cert-manager :}
+\begin{lstlisting}[language=bash]
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+\end{lstlisting}
+
+\textbf{Vérification HTTPS :}
+\begin{lstlisting}[language=bash]
+# Vérifier le certificat
+curl -v https://mon-app.local
+
+# Vérifier le Secret TLS créé
+kubectl get secret mon-app-tls-secret
+kubectl describe secret mon-app-tls-secret
+\end{lstlisting}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6 ter - Routage]
+\begin{enumerate}
+    \item Un utilisateur accède à \texttt{http://myapp.example.com/api/users}. Vers quel Service sera-t-il routé ?
+    \item Que se passe-t-il si l'utilisateur accède à \texttt{http://myapp.example.com/home} ?
+    \item Proposez un cas d'usage réel pour ce type de configuration multi-chemins.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=CORRECTION Question 6 ter]
+
+\textbf{1. Routage de \texttt{/api/users} :}
+
+Le trafic sera routé vers \texttt{backend-service:3000}.
+
+\textbf{Explication :}
+\begin{itemize}
+    \item L'URL \texttt{/api/users} commence par \texttt{/api}
+    \item La règle \texttt{path: /api} avec \texttt{pathType: Prefix} matche
+    \item Ingress route vers \texttt{backend-service} port 3000
+\end{itemize}
+
+\textbf{Note importante :} L'ordre des paths compte !
+
+Les paths sont évalués du plus spécifique au plus général :
+\begin{lstlisting}[language=yaml]
+paths:
+# 1. Plus spécifique en premier
+- path: /api/v2
+  backend:
+    service:
+      name: backend-v2-service
+- path: /api
+  backend:
+    service:
+      name: backend-service
+# 2. Plus général en dernier
+- path: /
+  backend:
+    service:
+      name: frontend-service
+\end{lstlisting}
+
+\textbf{2. Routage de \texttt{/home} :}
+
+Le trafic sera routé vers \texttt{frontend-service:80}.
+
+\textbf{Explication :}
+\begin{itemize}
+    \item L'URL \texttt{/home} ne commence ni par \texttt{/api} ni par \texttt{/admin}
+    \item Elle matche la règle \texttt{path: /} (catch-all)
+    \item Ingress route vers \texttt{frontend-service} port 80
+\end{itemize}
+
+\textbf{Tableau récapitulatif :}
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{URL} & \textbf{Path matché} & \textbf{Service} \\
+\hline
+/api/users & /api & backend-service:3000 \\
+\hline
+/api & /api & backend-service:3000 \\
+\hline
+/admin/settings & /admin & admin-service:8080 \\
+\hline
+/home & / & frontend-service:80 \\
+\hline
+/ & / & frontend-service:80 \\
+\hline
+/about & / & frontend-service:80 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{3. Cas d'usage réel :}
+
+\textbf{Exemple : Application e-commerce}
+
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ecommerce-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: shop.example.com
+    http:
+      paths:
+      # Frontend SPA (React/Vue)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+
+      # API REST backend
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 3000
+
+      # Panel d'administration
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-panel-service
+            port:
+              number: 8080
+
+      # Service de paiement
+      - path: /payment
+        pathType: Prefix
+        backend:
+          service:
+            name: payment-service
+            port:
+              number: 5000
+
+      # Images et assets statiques
+      - path: /static
+        pathType: Prefix
+        backend:
+          service:
+            name: cdn-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\textbf{Avantages de cette architecture :}
+
+\begin{enumerate}
+    \item \textbf{Un seul point d'entrée} : \texttt{shop.example.com}
+    \item \textbf{Séparation des services} : Chaque microservice indépendant
+    \item \textbf{Scalabilité indépendante} : Le service API peut avoir 10 replicas, frontend 3, etc.
+    \item \textbf{Sécurité} : Possibilité d'appliquer des règles différentes par path (auth, rate-limiting)
+    \item \textbf{Déploiements indépendants} : Mise à jour du backend sans toucher au frontend
+    \item \textbf{Certificat SSL unique} : Un seul certificat pour tous les services
+\end{enumerate}
+
+\textbf{Exemple d'annotations avancées :}
+\begin{lstlisting}[language=yaml]
+annotations:
+  # Authentification pour /admin
+  nginx.ingress.kubernetes.io/auth-type: basic
+  nginx.ingress.kubernetes.io/auth-secret: admin-auth
+  nginx.ingress.kubernetes.io/auth-realm: "Administration"
+
+  # Rate limiting pour /api
+  nginx.ingress.kubernetes.io/limit-rps: "100"
+
+  # Redirection HTTPS
+  nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+  # Taille max upload pour /api
+  nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+  # CORS
+  nginx.ingress.kubernetes.io/enable-cors: "true"
+  nginx.ingress.kubernetes.io/cors-allow-origin: "https://shop.example.com"
+\end{lstlisting}
+
+\textbf{Autres cas d'usage :}
+\begin{itemize}
+    \item \textbf{SaaS multi-tenant} : Routage basé sur le hostname
+    \item \textbf{API Gateway} : Routage vers différentes versions d'API (/v1, /v2)
+    \item \textbf{Blue/Green deployment} : Routage vers différentes versions
+    \item \textbf{A/B testing} : Routage conditionnel avec annotations
+\end{itemize}
+\end{tcolorbox}
+
+\section{Pour aller plus loin}
+
+\begin{tcolorbox}[colback=purple!5!white,colframe=purple!75!black,title=Ressources complémentaires]
+\begin{itemize}
+    \item Documentation officielle Kubernetes : \url{https://kubernetes.io/fr/docs/home/}
+    \item Interactive tutorial : \url{https://kubernetes.io/docs/tutorials/}
+    \item Kubernetes CheatSheet : \url{https://kubernetes.io/docs/reference/kubectl/cheatsheet/}
+    \item Play with Kubernetes : \url{https://labs.play-with-k8s.com/}
+    \item Kubernetes patterns : \url{https://k8spatterns.io/}
+\end{itemize}
+\end{tcolorbox}
+
+\vfill
+
+\begin{center}
+\textbf{\Large Fin du corrigé}
+
+\vspace{1cm}
+
+\textit{Ce document est strictement confidentiel et réservé aux enseignants.}
+\end{center}
+
+\end{document}

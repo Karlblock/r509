@@ -1,0 +1,666 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+
+\geometry{margin=2.5cm}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{TD - Kubernetes : Déploiement d'applications}
+\rhead{IUT - R509}
+\cfoot{\thepage}
+
+\title{\textbf{TD02 - Kubernetes : Déploiement d'applications}\\
+\large Préparation au TP02}
+\author{Charles SIEPEN\\BUT Informatique - Semestre 5 - Ressource R5.09}
+\date{2024/2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Objectifs du TD]
+Ce TD a pour objectif de vous familiariser avec les concepts théoriques de Kubernetes nécessaires pour réussir le TP02.
+
+\textbf{Prérequis :} Avoir terminé le TD01 sur les conteneurs et Docker.
+
+Vous étudierez :
+\begin{itemize}
+    \item La transition de Docker vers Kubernetes
+    \item Les objets Kubernetes fondamentaux (Pods, Deployments, Services)
+    \item Les commandes kubectl essentielles
+    \item L'architecture d'une application sur Kubernetes
+    \item La gestion du stockage avec les PersistentVolumeClaims
+    \item L'exposition des applications avec Ingress
+\end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Rappel - TD01]
+Dans le TD01, vous avez appris à :
+\begin{itemize}
+    \item Créer des images Docker avec un Dockerfile
+    \item Déployer des conteneurs individuels
+    \item Gérer le stockage avec des volumes Docker
+    \item Configurer le réseau entre conteneurs
+\end{itemize}
+
+\textbf{Kubernetes} va vous permettre d'orchestrer et de gérer ces conteneurs à grande échelle !
+\end{tcolorbox}
+
+\section{De Docker à Kubernetes}
+
+\subsection{Pourquoi Kubernetes ?}
+
+Dans le TD01, vous avez appris à déployer des conteneurs Docker individuellement. Cependant, imaginez que vous devez :
+
+\begin{itemize}
+    \item Déployer une application composée de 10 microservices différents
+    \item Assurer la haute disponibilité avec plusieurs replicas de chaque service
+    \item Gérer automatiquement les redémarrages en cas de panne
+    \item Scaler automatiquement selon la charge
+    \item Mettre à jour vos applications sans interruption de service
+\end{itemize}
+
+\textbf{C'est là que Kubernetes intervient !}
+
+\subsection{Kubernetes vs Docker : Complémentarité}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Important à comprendre]
+\begin{itemize}
+    \item \textbf{Docker} : Vous permet de créer et exécuter des conteneurs individuels
+    \item \textbf{Kubernetes} : Orchestre et gère des centaines/milliers de conteneurs Docker
+\end{itemize}
+
+Kubernetes \textbf{n'est pas un remplacement} de Docker, mais un \textbf{orchestrateur} qui utilise Docker (ou d'autres runtimes de conteneurs) pour exécuter les conteneurs.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Analogie]
+\textbf{Docker} = Construire et conduire une voiture
+
+\textbf{Kubernetes} = Gérer une flotte de taxis avec :
+\begin{itemize}
+    \item Dispatch automatique des courses
+    \item Remplacement des véhicules en panne
+    \item Ajout de véhicules aux heures de pointe
+    \item Maintenance et mises à jour coordonnées
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Rappel : Architecture Docker (TD01)}
+
+Dans le TD01, vous avez vu l'architecture Docker :
+\begin{itemize}
+    \item \textbf{Client Docker} : Interface en ligne de commande (\texttt{docker})
+    \item \textbf{Démon Docker} : Gère les conteneurs, images, réseaux, volumes
+    \item \textbf{Registre} : Stocke et distribue les images
+\end{itemize}
+
+\subsection{Architecture Kubernetes : Une extension du concept}
+
+Kubernetes reprend des concepts similaires mais à plus grande échelle :
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Concept} & \textbf{Docker (TD01)} & \textbf{Kubernetes (TD02)} \\
+\hline
+Conteneur & \texttt{docker run} & Pod (ensemble de conteneurs) \\
+\hline
+Gestion & Démon Docker & Control Plane + Kubelet \\
+\hline
+CLI & \texttt{docker} & \texttt{kubectl} \\
+\hline
+Réseau & Docker network & Service + Ingress \\
+\hline
+Stockage & Docker volume & PersistentVolume(Claim) \\
+\hline
+Déploiement & Dockerfile & Deployment manifest (YAML) \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Introduction à kubectl}
+
+\subsection{De \texttt{docker} à \texttt{kubectl}}
+
+Vous connaissez déjà les commandes Docker du TD01. Voici leur équivalent en Kubernetes :
+
+\begin{center}
+\begin{tabular}{|p{6cm}|p{6cm}|}
+\hline
+\textbf{Docker (TD01)} & \textbf{Kubernetes (TD02)} \\
+\hline
+\texttt{docker ps} & \texttt{kubectl get pods} \\
+\hline
+\texttt{docker images} & \texttt{kubectl get deployments} \\
+\hline
+\texttt{docker run nginx} & \texttt{kubectl create deployment nginx --image=nginx} \\
+\hline
+\texttt{docker logs <container>} & \texttt{kubectl logs <pod>} \\
+\hline
+\texttt{docker exec -it <container> sh} & \texttt{kubectl exec -it <pod> -- sh} \\
+\hline
+\texttt{docker rm <container>} & \texttt{kubectl delete pod <pod>} \\
+\hline
+\texttt{docker network ls} & \texttt{kubectl get services} \\
+\hline
+\texttt{docker volume ls} & \texttt{kubectl get pvc} \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Les commandes de base}
+
+La commande \texttt{kubectl} est l'outil principal pour interagir avec un cluster Kubernetes. Elle utilise une syntaxe de type \texttt{kubectl <verbe> <objet>}, similaire à \texttt{docker <objet> <commande>} que vous avez vu dans le TD01.
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 1]
+Associez chaque verbe kubectl à sa fonction :
+\begin{enumerate}[label=\alph*)]
+    \item \texttt{get}
+    \item \texttt{describe}
+    \item \texttt{apply}
+    \item \texttt{delete}
+    \item \texttt{logs}
+\end{enumerate}
+
+Fonctions :
+\begin{enumerate}[label=\Roman*.]
+    \item Afficher les détails complets d'une ressource
+    \item Supprimer une ressource
+    \item Appliquer une configuration depuis un fichier
+    \item Lister les ressources
+    \item Consulter les journaux d'un conteneur
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Les objets Kubernetes}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 2]
+Complétez le tableau suivant avec la description de chaque objet Kubernetes :
+
+\begin{center}
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Objet} & \textbf{Description} \\
+\hline
+Pod & \rule{8cm}{0.4pt} \\
+\hline
+Deployment & \rule{8cm}{0.4pt} \\
+\hline
+Service & \rule{8cm}{0.4pt} \\
+\hline
+Ingress & \rule{8cm}{0.4pt} \\
+\hline
+PersistentVolumeClaim & \rule{8cm}{0.4pt} \\
+\hline
+Secret & \rule{8cm}{0.4pt} \\
+\hline
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+
+\subsection{Namespaces}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 3]
+\begin{enumerate}
+    \item Qu'est-ce qu'un namespace dans Kubernetes ?
+    \item Donnez deux exemples de namespaces système standard.
+    \item Pourquoi ne devrait-on pas déployer ses applications dans le namespace \texttt{default} ?
+    \item Quelle est la différence entre une ressource \textit{namespaced} et une ressource \textit{cluster-scoped} ?
+    \item Donnez un exemple de ressource cluster-scoped.
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Architecture d'une application sur Kubernetes}
+
+Kubernetes organise les applications selon trois composants principaux : Compute, Storage, et Networking.
+
+\subsection{Compute : Les Deployments}
+
+Voici un exemple de Deployment simplifié :
+
+\begin{lstlisting}[language=yaml]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mon-app
+  labels:
+    app: mon-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mon-app
+  template:
+    metadata:
+      labels:
+        app: mon-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 4]
+En analysant le manifest ci-dessus :
+\begin{enumerate}
+    \item Quelle version de l'API Kubernetes est utilisée ?
+    \item Combien de replicas (copies) du Pod seront créés ?
+    \item Quel est le rôle du champ \texttt{selector.matchLabels} ?
+    \item Sur quel port le conteneur écoute-t-il ?
+    \item Que se passerait-il si vous supprimiez manuellement un des Pods créés par ce Deployment ?
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Storage : Les PersistentVolumeClaims}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Rappel TD01 - Volumes Docker]
+Dans le TD01 (exercice 8), vous avez appris que :
+\begin{itemize}
+    \item Les données dans un conteneur sont \textbf{éphémères} par défaut
+    \item Les \textbf{volumes Docker} permettent de persister les données
+    \item Un volume survit à la suppression du conteneur
+\end{itemize}
+
+\textbf{Kubernetes} utilise le même principe, mais avec plus de sophistication !
+\end{tcolorbox}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Docker Volume (TD01)} & \textbf{Kubernetes PVC (TD02)} \\
+\hline
+Créé par le démon Docker & Provisionné dynamiquement \\
+\hline
+Lié à un hôte spécifique & Peut migrer entre nœuds \\
+\hline
+\texttt{docker volume create} & Manifest PersistentVolumeClaim \\
+\hline
+Montage: \texttt{-v nom:/path} & \texttt{volumeMounts} dans le Pod \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 5]
+\begin{enumerate}
+    \item Expliquez la différence entre :
+    \begin{itemize}
+        \item PersistentVolume (PV)
+        \item PersistentVolumeClaim (PVC)
+        \item StorageClass
+    \end{itemize}
+    \item Pourquoi utilise-t-on un PVC plutôt que de stocker directement les données dans le conteneur ? (Pensez à l'exercice 8 du TD01)
+    \item Que signifie le mode d'accès \texttt{ReadWriteOnce} ?
+    \item Citez deux autres modes d'accès possibles pour un volume.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Networking : Services et Ingress}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Rappel TD01 - Réseau Docker]
+Dans le TD01 (section 9), vous avez appris que :
+\begin{itemize}
+    \item Docker crée un réseau \texttt{bridge} par défaut
+    \item Les conteneurs communiquent via leurs adresses IP
+    \item Le mapping de ports expose les conteneurs (\texttt{-p 8080:80})
+    \item Les conteneurs sur le même réseau peuvent se découvrir
+\end{itemize}
+
+\textbf{Kubernetes} ajoute des abstractions puissantes avec les Services et Ingress !
+\end{tcolorbox}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Docker Network (TD01)} & \textbf{Kubernetes (TD02)} \\
+\hline
+Réseau bridge & Service ClusterIP \\
+\hline
+Port mapping \texttt{-p 8080:80} & Service NodePort \\
+\hline
+Accès HTTP externe & Ingress \\
+\hline
+Découverte par nom DNS & Service DNS automatique \\
+\hline
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6]
+\begin{enumerate}
+    \item Expliquez pourquoi on a besoin d'un Service pour accéder à des Pods.
+    \item Quels sont les trois principaux types de Services dans Kubernetes ?
+    \item Quelle est la différence entre un Service de type \texttt{ClusterIP} et \texttt{NodePort} ?
+    \item À quoi sert un objet Ingress ? (Comparez avec le port mapping Docker du TD01)
+    \item Qu'est-ce qu'un Ingress Controller ? Donnez un exemple.
+\end{enumerate}
+\end{tcolorbox}
+
+\subsection{Focus sur l'Ingress}
+
+L'Ingress est un objet crucial pour exposer vos applications au monde extérieur de manière professionnelle.
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Rappel : Limites du port mapping Docker]
+Dans le TD01, pour exposer un conteneur, vous utilisiez :
+\begin{lstlisting}[language=bash]
+docker run -p 8080:80 nginx
+\end{lstlisting}
+
+\textbf{Limitations :}
+\begin{itemize}
+    \item Un seul conteneur par port de l'hôte
+    \item Pas de routage intelligent (toujours vers le même conteneur)
+    \item Pas de gestion HTTPS/TLS
+    \item Pas de virtual hosting (plusieurs domaines)
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{Exemple d'Ingress pour une application web :}
+
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mon-app-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: mon-app.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6 bis - Analyse d'Ingress]
+En analysant le manifest Ingress ci-dessus :
+\begin{enumerate}
+    \item Quelle est la version de l'API utilisée pour l'Ingress ?
+    \item Quel hostname est configuré pour accéder à l'application ?
+    \item Vers quel Service le trafic sera-t-il routé ?
+    \item Que signifie \texttt{pathType: Prefix} ?
+    \item Comment pourriez-vous ajouter le support HTTPS à cet Ingress ?
+\end{enumerate}
+\end{tcolorbox}
+
+\textbf{Exemple avancé : Ingress avec plusieurs chemins}
+
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-path-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 3000
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 8080
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 6 ter - Routage]
+\begin{enumerate}
+    \item Un utilisateur accède à \texttt{http://myapp.example.com/api/users}. Vers quel Service sera-t-il routé ?
+    \item Que se passe-t-il si l'utilisateur accède à \texttt{http://myapp.example.com/home} ?
+    \item Proposez un cas d'usage réel pour ce type de configuration multi-chemins.
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Les variables d'environnement et les Secrets}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Rappel TD01 - Images et configuration]
+Dans le TD01 (exercice 6), vous avez déployé un service web Java dans un conteneur en utilisant :
+\begin{itemize}
+    \item Une image de base (\texttt{eclipse-temurin:11-jre})
+    \item L'instruction \texttt{COPY} pour ajouter votre JAR
+    \item L'instruction \texttt{CMD} ou \texttt{ENTRYPOINT} pour lancer l'application
+\end{itemize}
+
+\textbf{Dans Kubernetes}, le principe est similaire, mais la configuration est externalisée !
+\end{tcolorbox}
+
+\subsection{Variables d'environnement}
+
+Les variables d'environnement permettent de passer des configurations aux conteneurs, exactement comme dans Docker.
+
+\begin{lstlisting}[language=yaml]
+env:
+- name: DATABASE_URL
+  value: "postgres://db:5432/mydb"
+- name: PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: db-secret
+      key: password
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 7]
+\begin{enumerate}
+    \item Quelle est la différence entre définir une valeur directement avec \texttt{value} et utiliser \texttt{valueFrom} ?
+    \item Dans quel cas devriez-vous utiliser un Secret plutôt qu'une valeur en clair ?
+    \item Le Secret Kubernetes utilise l'encodage base64. Est-ce un chiffrement sécurisé ? Pourquoi ?
+    \item Proposez une solution pour améliorer la sécurité des Secrets dans Kubernetes.
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Volumes et montages}
+
+\begin{lstlisting}[language=yaml]
+volumeMounts:
+- mountPath: /data
+  name: storage-volume
+volumes:
+- name: storage-volume
+  persistentVolumeClaim:
+    claimName: my-pvc
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 8]
+\begin{enumerate}
+    \item Expliquez le rôle de la section \texttt{volumes}.
+    \item Expliquez le rôle de la section \texttt{volumeMounts}.
+    \item Que se passe-t-il si le PVC \texttt{my-pvc} n'existe pas ?
+    \item Pourquoi les données stockées dans \texttt{/data} persistent-elles alors que celles stockées ailleurs dans le conteneur sont perdues ?
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Labels et Selectors}
+
+Les labels sont des paires clé-valeur attachées aux objets Kubernetes. Les selectors permettent de filtrer les objets par leurs labels.
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Question 9]
+Considérez le Deployment et le Service suivants :
+
+\textbf{Deployment :}
+\begin{lstlisting}[language=yaml]
+metadata:
+  labels:
+    app: frontend
+    tier: web
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: web
+\end{lstlisting}
+
+\textbf{Service :}
+\begin{lstlisting}[language=yaml]
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+\end{lstlisting}
+
+Questions :
+\begin{enumerate}
+    \item Le Service pourra-t-il router le trafic vers les Pods créés par ce Deployment ? Pourquoi ?
+    \item Que se passerait-il si le Service utilisait le selector \texttt{tier: web} au lieu de \texttt{app: frontend} ?
+    \item Proposez une commande kubectl pour lister uniquement les Pods ayant le label \texttt{app=frontend}.
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Exercice de synthèse}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Exercice pratique sur papier]
+Vous devez déployer une application web simple composée de :
+\begin{itemize}
+    \item Un frontend Nginx (3 replicas)
+    \item Un backend Node.js (2 replicas)
+    \item Une base de données PostgreSQL (1 replica avec stockage persistant)
+\end{itemize}
+
+\textbf{Travail à faire :}
+\begin{enumerate}
+    \item Dessinez un schéma représentant l'architecture de cette application sur Kubernetes.
+    \item Listez tous les objets Kubernetes nécessaires (types et noms).
+    \item Pour chaque objet, indiquez :
+    \begin{itemize}
+        \item Son type (Deployment, Service, PVC, etc.)
+        \item Son rôle
+        \item Avec quels autres objets il interagit
+    \end{itemize}
+    \item Expliquez le flux de données depuis un utilisateur externe jusqu'à la base de données.
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Questions de réflexion pour le TP}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Préparation au TP02]
+Avant le TP, réfléchissez aux questions suivantes :
+\begin{enumerate}
+    \item Comment vérifier que tous les Pods d'un Deployment sont en état \texttt{Running} ?
+    \item Quelle commande utiliseriez-vous pour consulter les logs d'un Pod qui redémarre en boucle ?
+    \item Comment accéder à une application depuis votre navigateur si elle est exposée via un Ingress avec le hostname \texttt{mon-app.local} ?
+    \item Si vous supprimez un Pod, que devient son PersistentVolume ?
+    \item Comment modifier le nombre de replicas d'un Deployment déjà déployé ?
+    \item Quelle est la différence entre \texttt{kubectl apply} et \texttt{kubectl create} ?
+\end{enumerate}
+\end{tcolorbox}
+
+\section{Commandes kubectl à mémoriser}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Antisèche kubectl]
+\begin{lstlisting}[language=bash]
+# Lister les ressources
+kubectl get nodes
+kubectl get pods
+kubectl get deployments
+kubectl get services
+kubectl get pvc
+kubectl get namespaces
+
+# Obtenir des details
+kubectl describe pod <nom-pod>
+kubectl describe service <nom-service>
+
+# Appliquer des manifests
+kubectl apply -f fichier.yaml
+kubectl apply -f dossier/
+
+# Consulter les logs
+kubectl logs <nom-pod>
+kubectl logs -f <nom-pod>  # mode suivi
+
+# Supprimer des ressources
+kubectl delete pod <nom-pod>
+kubectl delete -f fichier.yaml
+
+# Executer une commande dans un pod
+kubectl exec -it <nom-pod> -- /bin/bash
+
+# Afficher en YAML
+kubectl get service <nom> -o yaml
+
+# Filtrer par labels
+kubectl get pods -l app=frontend
+\end{lstlisting}
+\end{tcolorbox}
+
+\section{Pour aller plus loin}
+
+\begin{tcolorbox}[colback=white,colframe=black,sharp corners,title=Ressources complémentaires]
+\begin{itemize}
+    \item Documentation officielle Kubernetes : \url{https://kubernetes.io/fr/docs/home/}
+    \item Interactive tutorial : \url{https://kubernetes.io/docs/tutorials/}
+    \item Kubernetes CheatSheet : \url{https://kubernetes.io/docs/reference/kubectl/cheatsheet/}
+    \item Play with Kubernetes : \url{https://labs.play-with-k8s.com/}
+\end{itemize}
+\end{tcolorbox}
+
+\vfill
+
+\begin{center}
+\textit{Bon courage pour le TP !}
+\end{center}
+
+\end{document}

@@ -1,0 +1,756 @@
+\documentclass[a4paper,11pt]{article}
+
+% Packages essentiels
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+
+% Configuration de la page
+\geometry{margin=2.5cm, headheight=14pt}
+
+% En-tête et pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{TP02 | K8s - Déploiement}
+\rhead{Cours IUT Ifs}
+\cfoot{\thepage}
+
+% Configuration des liens
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% Configuration du style de code YAML
+\lstdefinestyle{yaml}{
+    language=bash,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    backgroundcolor=\color{gray!10},
+    captionpos=b,
+    tabsize=2,
+    keepspaces=true,
+    columns=fullflexible,
+    literate={-}{{-}}1 {:}{{:}}1
+}
+
+\lstdefinestyle{bash}{
+    language=bash,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keepspaces=true,
+    columns=fullflexible
+}
+
+% Définition des environnements colorés
+\newtcolorbox{notebox}[1][]{
+    colback=blue!5,
+    colframe=blue!75!black,
+    title={\faInfoCircle\ Note},
+    #1
+}
+
+\newtcolorbox{tipbox}[1][]{
+    colback=green!5,
+    colframe=green!75!black,
+    title={\faLightbulb\ Astuce},
+    #1
+}
+
+\newtcolorbox{warningbox}[1][]{
+    colback=orange!5,
+    colframe=orange!75!black,
+    title={\faExclamationTriangle\ Important},
+    #1
+}
+
+\newtcolorbox{questionbox}[1][]{
+    colback=purple!5,
+    colframe=purple!75!black,
+    title={\faQuestion\ Question},
+    #1
+}
+
+% Titre du document
+\title{
+    \vspace{-2cm}
+    \Huge\textbf{TP02 | Kubernetes - Déploiement}\\
+    \vspace{0.5cm}
+    \Large Déploiement d'applications sur Kubernetes
+}
+\author{Cours IUT Ifs - R509}
+\date{Dernière mise à jour : \today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{
+\textbf{Tags :} \texttt{docker} | \texttt{container} | \texttt{kubernetes} | \texttt{tp02}
+}}
+\end{center}
+
+\vspace{1cm}
+
+\section{Déroulement du TP}
+
+L'objectif du TP est de vous donner tous les éléments nécessaires afin de déployer votre application sur Kubernetes.
+
+Il y a des questions lors de ce TP affichées par le symbole \faQuestion.
+
+Vous \textbf{DEVEZ} faire un compte-rendu et l'envoyer sur l'adresse mail de l'enseignant encadrant votre séance de TP.
+
+\begin{warningbox}
+\centering
+\Large\textbf{LISEZ-BIEN TOUT LE TP}
+\end{warningbox}
+
+\section{Prérequis}
+
+\begin{enumerate}[label=\protect\faCheckCircle]
+    \item Avoir terminé le TP01
+    \item Accès au proxy IUT
+    \item Votre VM utilisée au TP01 en lui ajoutant 2 cœurs
+    \item Cluster kind avec 2 control-plane + 1 worker :
+    \begin{itemize}
+        \item Forward le port 80:80 et 443:443
+        \item Mettre un \texttt{node-labels: "ingress-ready=true"} sur le nœud où il y a le port forward
+        \item Déployer un nginx sur votre cluster $\rightarrow$ Fin de TP01
+        \item \faExclamationTriangle\ Pensez bien au proxy...
+    \end{itemize}
+\end{enumerate}
+
+\section{Focus sur les commandes kubectl}
+
+L'outil en ligne de commande de Kubernetes, \texttt{kubectl}, vous permet d'exécuter des commandes dans les clusters Kubernetes. Vous pouvez utiliser \texttt{kubectl} pour déployer des applications, inspecter et gérer les ressources du cluster et consulter les logs.
+
+\subsection{Après l'installation de votre cluster}
+
+\begin{lstlisting}[style=bash]
+kubectl get nodes
+\end{lstlisting}
+
+Sortie attendue :
+
+\begin{lstlisting}[style=bash]
+NAME                 STATUS   ROLES           AGE     VERSION
+kind-control-plane   Ready    control-plane   3m8s    v1.25.3
+kind-control-plane2  Ready    control-plane   2m43s   v1.25.3
+kind-worker          Ready    <none>          113s    v1.25.3
+\end{lstlisting}
+
+Décomposons la commande que nous avons lancée pour avoir une idée de ce qui se passe :
+
+\begin{itemize}
+    \item \texttt{get} - c'est l'une des nombreuses commandes ou "verbes" de kubectl
+    \item \texttt{nodes} - l'objet cible de la commande get
+\end{itemize}
+
+La sortie que nous avons reçue de Kubernetes nous indique qu'il y a 3 nœuds, qu'ils sont tous "prêts" (le kubelet sur chaque nœud est en place et connecté à l'API Kubernetes), quels sont leurs rôles (pas tout à fait important pour la plupart des utilisateurs), quel est leur âge et quelle est la version de Kubernetes qu'ils exécutent.
+
+\subsection{Verbes kubectl courants}
+
+Voici quelques-uns des verbes les plus courants que vous utiliserez avec \texttt{kubectl} :
+
+\begin{itemize}
+    \item \texttt{get} - Affiche une ressource
+    \item \texttt{describe} - Affiche des détails spécifiques sur une ou plusieurs ressources
+    \item \texttt{create} - Crée une ressource (ou à partir d'un fichier avec \texttt{-f})
+    \item \texttt{apply} - Applique un manifeste
+    \item \texttt{delete} - Supprime une ressource (ou un fichier avec \texttt{-f})
+\end{itemize}
+
+\section{Informations à propos du cluster}
+
+Maintenant que les verbes les plus courants sont connus, voyons ce que nous pouvons trouver d'autre dans le cluster.
+
+\begin{tipbox}
+\begin{lstlisting}[style=bash]
+kubectl get all
+\end{lstlisting}
+\end{tipbox}
+
+\begin{questionbox}
+\begin{enumerate}
+    \item Afficher la liste des namespaces du cluster
+    \begin{itemize}
+        \item Combien de namespaces contient le cluster ?
+    \end{itemize}
+    \item Afficher la liste de la "plupart" des objets dans le namespace \texttt{kube-system}
+    \begin{itemize}
+        \item Quels objets vous afficher dans le namespace ?
+        \item Quelle adresse IP le service \texttt{kubernetes} a-t-il ?
+    \end{itemize}
+\end{enumerate}
+\end{questionbox}
+
+\section{Les Objets Kubernetes}
+
+Tous les objets Kubernetes peuvent être visualisés de la même manière et de différentes façons. Examinons un objet, le Service kubernetes dans le namespace par \texttt{default}.
+
+\begin{notebox}
+Le namespace \texttt{default} est exactement ce qu'il semble être. S'il n'y a pas de contexte défini, kubectl ciblera toujours le namespace par défaut. Ce n'est pas une bonne pratique de mettre vos applications ici, mais il y a beaucoup de guides sur Internet qui vous "enseignent" de mettre vos applications ici. S'il vous plaît, ne faites pas cela et utilisez les namespaces comme ils sont là pour vous sauver. Si vous avez envie de supprimer votre namespace avec un \texttt{kubectl delete all}, cela supprimera également le service kubernetes, ce qui pourrait avoir des effets secondaires peu souhaitables.
+\end{notebox}
+
+\begin{tipbox}
+\begin{lstlisting}[style=bash]
+get ... -o yaml
+\end{lstlisting}
+\end{tipbox}
+
+\begin{questionbox}
+Afficher le service kubernetes dans le namespace par défaut en yaml
+\begin{enumerate}
+    \item Quelle est la version de l'API de l'objet kubernetes ?
+    \item Quel est le type d'objet ?
+    \item Quelles sont les labels de cet objet ?
+\end{enumerate}
+\end{questionbox}
+
+\section{Où vivent les objets ?}
+
+Nous avons donc examiné les objets Kubernetes et la façon de les obtenir et de les décrire, mais nous n'avons pas vraiment discuté de l'endroit où ils vivent.
+
+Jusqu'à présent, chaque objet était un objet au niveau du namespace, mais il y a des objets dans un cluster Kubernetes qui ne sont pas au niveau du namespace et qui vivent au niveau du cluster.
+
+Ces objets ont un flag dans leur définition qui indique \texttt{namespaced: false}.
+
+Pour obtenir une liste des objets Kubernetes dans votre cluster qui peuvent être créés/appliqués, vous pouvez exécuter la commande \texttt{kubectl api-resources --verbs=list} pour les identifier. Vous pouvez également les séparer en \texttt{namespaced=true} ou \texttt{namespaced=false} pour montrer quels objets sont destinés à quelle zone d'un cluster.
+
+\begin{questionbox}
+Question :
+\begin{itemize}
+    \item Quelle est la différence entre une api-resources namespaced true/false. Citer un exemple.
+\end{itemize}
+\end{questionbox}
+
+\section{Déploiement d'une première application}
+
+Nous connaissons donc les objets Kubernetes et savons comment examiner leurs spécifications pour déterminer ce qu'ils sont et ce qu'ils font, mais nous n'avons rien vu d'autre que ce dont Kubernetes lui-même a besoin.
+
+Comme mentionné précédemment, Kubernetes peut facilement être décomposé en 3 composants principaux d'un "cloud" (Compute, Storage, Networking), alors regardons les manifestes qui génèrent ces composants.
+
+Au lieu de plonger directement dans le déploiement d'un serveur Minecraft, nous allons examiner un serveur VS Code pour nous familiariser avec d'autres composants Kubernetes. En règle générale, vous devriez nommer vos fichiers manifestes en fonction de ce qu'ils sont, mais pour comparer les trois principaux composants, je les ai nommés en fonction de ce qu'ils "font".
+
+Il s'agit simplement de VS Code dans un navigateur (un projet vraiment cool) fonctionnant dans un conteneur.
+
+\subsection{Compute Manifest}
+
+Dans le fichier \texttt{compute.yaml}, nous avons un seul objet qui est notre Déploiement. Un \texttt{Deployment} est responsable du déploiement d'un Pod qui peut contenir n'importe quel nombre de conteneurs.
+
+Cet exemple particulier n'a qu'un seul conteneur qui utilise l'image d'un serveur VS Code qui peut être exécuté dans un navigateur.
+
+Cette image est hébergée sur Quay.io et lorsque le Pod va démarrer, le kubelet sur le nœud où le Pod a été planifié va essentiellement exécuter un \texttt{docker pull} pour obtenir l'image afin qu'il puisse ensuite démarrer le conteneur. Quelques éléments à noter dans ce manifeste sont les sections \texttt{volumeMounts}, \texttt{volumes}, et \texttt{env}.
+
+\textit{Enregistrer le fichier \texttt{compute.yaml} dans un dossier nommé \texttt{vs\_code}}
+
+\begin{lstlisting}[style=yaml, caption={compute.yaml}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: code-server
+  name: code-server
+spec:
+  selector:
+    matchLabels:
+      app: code-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: code-server
+    spec:
+      containers:
+      - env:
+        - name: PASSWORD
+          value: CHANGEME
+        image: codercom/code-server:latest
+        imagePullPolicy: Always
+        name: code-server
+        ports:
+        - name: code-server
+          containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /home/coder
+          name: coder
+      initContainers:
+      - name: pvc-permission-fix
+        image: busybox
+        command: ["/bin/chmod","-R","777", "/home/coder"]
+        volumeMounts:
+        - name: coder
+          mountPath: /home/coder
+      volumes:
+      - name: coder
+        persistentVolumeClaim:
+          claimName: code-server
+\end{lstlisting}
+
+\begin{questionbox}
+Questions :
+\begin{itemize}
+    \item À quoi sert la section \texttt{env} ?
+    \item À quoi sert la section \texttt{volume} et \texttt{volumemount} ?
+\end{itemize}
+\end{questionbox}
+
+\subsection{Storage Manifest}
+
+Notre manifeste de stockage est assez simple comme vous pouvez le voir dans \texttt{storage.yaml}. Il y a un seul objet appelé \texttt{PersistentVolumeClaim} qui, selon sa spécification, demandera 5Gi de stockage.
+
+Le "comment" est propre à chaque plateforme, mais un \texttt{PersistentVolumeClaim} demandera au cluster un PersistentVolume de la même taille que le Claim demandé et, s'il n'en existe pas, il se tournera vers la \texttt{StorageClass} pour en créer un.
+
+Une \texttt{StorageClass} est un provisionneur qui réside dans un cluster pour atteindre une plateforme de stockage et créer un partage/volume/disque qui est ensuite présent dans le cluster en tant que PersistentVolume.
+
+Un cluster peut avoir plus d'une \texttt{StorageClass} et l'une d'entre elles peut être définie comme la valeur par défaut à partir de laquelle tous les volumes persistants sont créés, à moins que vous ne spécifiiez dans le \texttt{PersistentVolumeClaim} la \texttt{StorageClass} à utiliser.
+
+S'il n'y a pas de \texttt{StorageClass} dans un cluster, vous aurez un \texttt{PersistentVolumeClaim} perpétuellement bloqué dans l'état Pending.
+
+\textit{Enregistrer le fichier \texttt{storage.yaml} dans votre dossier \texttt{vs\_code}}
+
+\begin{lstlisting}[style=yaml, caption={storage.yaml}]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-server
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+\end{lstlisting}
+
+\begin{questionbox}
+Questions :
+\begin{itemize}
+    \item Pourquoi créer un PVC ?
+\end{itemize}
+\end{questionbox}
+
+\subsection{Network Manifest}
+
+Le fichier \texttt{networking.yaml} contient 2 objets, un Service et un Ingress.
+
+Ce manifeste est divisé par la syntaxe YAML de \texttt{---} qui crée une "pause" et indique au moteur de rendu (dans notre cas \texttt{kubectl}) où commence l'objet suivant.
+
+\textit{Enregistrer le fichier \texttt{network.yaml} dans votre dossier \texttt{vs\_code}}
+
+\begin{lstlisting}[style=yaml, caption={network.yaml}]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: code-server
+  labels:
+    app: code-server
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: code-server
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: code-server
+  labels:
+    app: code-server
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: "mon-app.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: code-server
+            port:
+              number: 8080
+\end{lstlisting}
+
+\begin{questionbox}
+\faCheckCircle\ Déployer les manifests dans le dossier \texttt{vs\_code} sur votre cluster
+
+\faCheckCircle\ Faites en sorte d'accéder à votre application sur votre navigateur
+
+Questions :
+\begin{itemize}
+    \item Comment accédez-vous à l'application \texttt{mon-app.local} ?
+    \item Comment affichez-vous les logs des requêtes entrantes sur votre application ?
+    \item Quand vous supprimez le pod que se passe-t-il ?
+\end{itemize}
+\end{questionbox}
+
+\section{Secret dans Kubernetes}
+
+Une fois votre déploiement valide, modifier le \texttt{compute.yaml} afin de pointer la variable d'environnement vers un secret existant. Il faut créer ce manifest \texttt{secret.yaml} dans votre dossier \texttt{vs\_code}
+
+\begin{tipbox}
+\begin{lstlisting}[style=yaml, caption={secret.yaml}]
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coder-password
+type: Opaque
+stringData:
+  password: xxxx
+\end{lstlisting}
+
+Modifier la section \texttt{env} :
+\begin{lstlisting}[style=yaml]
+valueFrom:
+  secretKeyRef:
+    name: nom
+    key: nom-de-la-key
+\end{lstlisting}
+\end{tipbox}
+
+\begin{questionbox}
+Questions :
+\begin{itemize}
+    \item Comment faire en sorte que ce secret ne soit en clair dans nos manifests (base64 n'est pas un algo de chiffrement...) ?
+\end{itemize}
+\end{questionbox}
+
+\section{Pour les plus rapides}
+
+\subsection{Déploiement d'une application PHP avec Redis}
+
+L'application Guestbook est un frontend PHP qui utilise redis pour stocker ses données. Redis est un système de gestion de base de données clé-valeur.
+
+Avec les indications ci-dessous, créer votre application Guestbook dans un dossier \texttt{guestbook-php}
+
+\subsection{Création de la base de données Redis}
+
+Le fichier manifest, inclus ci-dessous, spécifie un contrôleur de déploiement qui exécute un replica unique du pod Redis.
+
+\begin{lstlisting}[style=yaml, caption={redis-leader-deployment.yaml}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-leader
+  labels:
+    app: redis
+    role: leader
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: leader
+        tier: backend
+    spec:
+      containers:
+      - name: leader
+        image: "docker.io/redis:6.0.5"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 6379
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Interroger la liste des Pods pour vérifier que le Pod Redis est en cours d'exécution
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl get pods
+\end{lstlisting}
+
+La réponse devrait être similaire à :
+
+\begin{lstlisting}[style=bash]
+NAME                           READY   STATUS    RESTARTS   AGE
+redis-leader-bv76de5-hvp0      1/1     Running   0          3s
+\end{lstlisting}
+
+\begin{enumerate}
+    \setcounter{enumi}{1}
+    \item Exécutez la commande suivante pour afficher les logs du pod leader Redis :
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl logs -f deployment/redis-leader
+\end{lstlisting}
+
+\subsection{Création du service Redis leader}
+
+L'application Guestbook a besoin de communiquer avec le leader redis pour écrire ses données. Pour ce faire, il faut créer un service pour proxifier le trafic vers le pod Redis.
+
+\begin{lstlisting}[style=yaml, caption={redis-leader-service.yaml}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-leader
+  labels:
+    app: redis
+    role: leader
+    tier: backend
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+  selector:
+    app: redis
+    role: leader
+    tier: backend
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Interroger la liste des services pour vérifier que le service Redis est en cours d'exécution
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl get service
+\end{lstlisting}
+
+La réponse devrait être similaire à :
+
+\begin{lstlisting}[style=bash]
+NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+kubernetes       ClusterIP   10.10.0.1       <none>        443/TCP    20m
+redis-leader     ClusterIP   10.154.88.17    <none>        6379/TCP   4m
+\end{lstlisting}
+
+\begin{enumerate}
+    \setcounter{enumi}{1}
+    \item Exécutez la commande suivante pour afficher les logs du pod leader Redis :
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl logs -f deployment/redis-leader
+\end{lstlisting}
+
+\begin{notebox}
+Ce manifest déploie un service nommé \texttt{redis-leader} avec des labels qui match les labels définis dans le \texttt{Deployment}, donc le Service route le trafic vers le pod Redis.
+\end{notebox}
+
+\subsection{Création des redis followers}
+
+Comme le Redis Leader est un seul Pod, vous pouvez faire en sorte de le rendre hautement disponible et ainsi matcher les demandes de trafic réseau en ajoutant des redis followers, ou bien des replicas.
+
+\begin{lstlisting}[style=yaml, caption={redis-follower-deployment.yaml}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-follower
+  labels:
+    app: redis
+    role: follower
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: follower
+        tier: backend
+    spec:
+      containers:
+      - name: follower
+        image: gcr.io/google_samples/gb-redis-follower:v2
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 6379
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Interroger la liste des Pods pour vérifier que les 2 Pod Redis followers sont en cours d'exécution
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl get pods
+\end{lstlisting}
+
+La réponse devrait être similaire à :
+
+\begin{lstlisting}[style=bash]
+NAME                              READY   STATUS    RESTARTS   AGE
+redis-leader-bv76de5-hvp0         1/1     Running   0          11m
+redis-follower-dddfbdcc9-82sfr    1/1     Running   0          37s
+redis-follower-dddfbdcc9-qrt5k    1/1     Running   0          38s
+\end{lstlisting}
+
+\subsection{Création du service Redis followers}
+
+L'application Guestbook a besoin de communiquer avec les followers redis afin de lire les données. Pour ce faire il faut créer un autre service.
+
+\begin{lstlisting}[style=yaml, caption={redis-follower-service.yaml}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-follower
+  labels:
+    app: redis
+    role: follower
+    tier: backend
+spec:
+  ports:
+  # the port that this service should serve on
+  - port: 6379
+  selector:
+    app: redis
+    role: follower
+    tier: backend
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Interroger la liste des services pour vérifier que le service Redis est en cours d'exécution
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl get service
+\end{lstlisting}
+
+La réponse devrait être similaire à :
+
+\begin{lstlisting}[style=bash]
+NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)     AGE
+kubernetes        ClusterIP   10.10.0.1        <none>        443/TCP     20m
+redis-follower    ClusterIP   10.165.17.42     <none>        6379/TCP    9s
+redis-leader      ClusterIP   10.154.88.17     <none>        6379/TCP    5m
+\end{lstlisting}
+
+\subsection{Création de l'application Guestbook}
+
+Maintenant que le stockage Redis de votre application Guestbook est opérationnel, démarrez les serveurs web Guestbook. Comme les Redis followers, le frontend est déployé à l'aide d'un déploiement Kubernetes.
+
+L'application Guestbook utilise un frontend PHP. Elle est configurée pour communiquer avec les services Redis follower ou leader, selon que la requête est une lecture ou une écriture. Le frontend expose une interface JSON.
+
+\begin{lstlisting}[style=yaml, caption={frontend-deployment.yaml}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: guestbook
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: guestbook
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v5
+        env:
+        - name: GET_HOSTS_FROM
+          value: "dns"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        ports:
+        - containerPort: 80
+\end{lstlisting}
+
+\begin{enumerate}
+    \item Interroger la liste des services pour vérifier que les replicas frontend sont en cours d'exécution
+\end{enumerate}
+
+\begin{lstlisting}[style=bash]
+kubectl get pods -l app=guestbook -l tier=frontend
+\end{lstlisting}
+
+La réponse devrait être similaire à :
+
+\begin{lstlisting}[style=bash]
+NAME                        READY   STATUS    RESTARTS   AGE
+frontend-85595f5bf9-5tqhb   1/1     Running   0          47s
+frontend-85595f5bf9-qbzwm   1/1     Running   0          47s
+frontend-85595f5bf9-zchwc   1/1     Running   0          47s
+\end{lstlisting}
+
+\subsection{Création du service frontend}
+
+\begin{lstlisting}[style=yaml, caption={frontend-service.yaml}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  ports:
+  # the port that this service should serve on
+  - port: 80
+  selector:
+    app: guestbook
+    tier: frontend
+\end{lstlisting}
+
+\subsection{Création de l'ingress}
+
+À vous de créer l'ingress pour accéder dans votre navigateur à l'application Guestbook
+
+Si vous avez réussi, un cadeau vous attend \faSmile
+
+\vspace{1cm}
+
+\begin{center}
+\Large\textbf{Merci de votre attention}
+\end{center}
+
+\vfill
+
+\begin{center}
+\small
+Dernière mise à jour : Octobre 2024\\
+\url{https://etyy.gitlab.io/support-cours-iut/info/r509/tp02/deploy/}
+\end{center}
+
+\end{document}
