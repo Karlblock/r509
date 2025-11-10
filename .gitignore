@@ -1,0 +1,11 @@
+# Fichiers système et caches
+.*
+!.gitignore
+
+# Dossiers à ne pas versionner
+archives/
+exemples/
+docker-minikube/
+outils/
+templates-vm/
+GOK8S/
