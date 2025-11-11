@@ -6,3 +6,7 @@
 archives/
 exemples/
 docker-minikube/
+
+# Large binary files
+*.tar
+*.tar.gz
