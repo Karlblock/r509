@@ -1,0 +1,19 @@
+# Script pour installer ingress-nginx avec nodeSelector intégré
+
+# Télécharger le manifeste
+curl -o /tmp/ingress-nginx.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+# Patcher le manifeste pour ajouter le nodeSelector
+cat <<'EOF' > /tmp/patch.yaml
+spec:
+  template:
+    spec:
+      nodeSelector:
+        ingress-ready: "true"
+EOF
+
+# Appliquer
+kubectl apply -f /tmp/ingress-nginx.yaml
+
+# Patcher le deployment
+kubectl patch deployment -n ingress-nginx ingress-nginx-controller --patch-file /tmp/patch.yaml

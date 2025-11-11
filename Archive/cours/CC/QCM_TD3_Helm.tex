@@ -1,0 +1,322 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+
+\geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{QCM -- TD3 Helm}
+\fancyhead[R]{Page \thepage/4}
+\fancyfoot[C]{ML 2024}
+
+\begin{document}
+
+\begin{center}
+\textbf{\Large BUT Informatique : QCM Helm -- TD3}
+\end{center}
+
+\vspace{0.3cm}
+
+\noindent
+\begin{tabular}{|p{0.6\textwidth}|p{0.35\textwidth}|}
+\hline
+\textbf{Nom et prénom :} & \\
+\dotfill & \\
+ & \\
+\hline
+\end{tabular}
+
+\vspace{0.5cm}
+
+\noindent
+\textbf{Contrôle de compréhension -- TD3 : Helm}
+
+\vspace{0.3cm}
+
+\noindent
+Rappel : Ce questionnaire est un QCM de validation de la compréhension du TD3 sur Helm.
+\textbf{Calculatrice non autorisée -- Aucun document n'est autorisé !}
+
+\vspace{0.2cm}
+
+\noindent
+Les questions ont nécessairement \textbf{une bonne réponse et une seule}, sauf si elles font apparaître le symbole \textbf{$\clubsuit$} et peuvent alors avoir \textbf{plusieurs bonnes réponses}. Une bonne réponse vaut \textbf{2 points}, une mauvaise réponse vaut \textbf{-1 point}, une absence de réponse vaut \textbf{0 point}.
+
+\vspace{0.5cm}
+
+\hrule
+
+\vspace{0.5cm}
+
+\section*{QCM :}
+
+\subsection*{Question 1 : Qu'est-ce qu'un Chart Helm ?}
+\begin{itemize}
+    \item[$\square$] Un graphique de monitoring des ressources Kubernetes
+    \item[$\square$] Un package contenant tous les fichiers nécessaires pour déployer une application Kubernetes
+    \item[$\square$] Un outil de visualisation de cluster
+    \item[$\square$] Un type de service Kubernetes
+\end{itemize}
+
+\subsection*{Question 2 : Comment appelle-t-on le déploiement d'un Chart dans un cluster Kubernetes ?}
+\begin{itemize}
+    \item[$\square$] Un deployment
+    \item[$\square$] Une instance
+    \item[$\square$] Une release
+    \item[$\square$] Un package
+\end{itemize}
+
+\subsection*{Question 3 : Quelle est la structure typique d'un Chart Helm ?}
+\begin{itemize}
+    \item[$\square$] Dockerfile, docker-compose.yml, README.md
+    \item[$\square$] Chart.yaml, templates/, values.yaml, charts/
+    \item[$\square$] deployment.yaml, service.yaml, ingress.yaml
+    \item[$\square$] package.json, node\_modules/, dist/
+\end{itemize}
+
+\subsection*{Question 4 : À quoi sert le fichier \texttt{Chart.yaml} ?}
+\begin{itemize}
+    \item[$\square$] À définir les valeurs des variables du Chart
+    \item[$\square$] À contenir les manifestes Kubernetes
+    \item[$\square$] À définir le nom, la version, la description et les dépendances du Chart
+    \item[$\square$] À stocker les secrets de l'application
+\end{itemize}
+
+\subsection*{Question 5 : Quel est le rôle du dossier \texttt{templates/} dans un Chart ?}
+\begin{itemize}
+    \item[$\square$] Stocker les Charts dépendants
+    \item[$\square$] Contenir les modèles de manifestes Kubernetes au format YAML
+    \item[$\square$] Définir les versions du Chart
+    \item[$\square$] Gérer les logs de déploiement
+\end{itemize}
+
+\subsection*{Question 6 : À quoi sert le fichier \texttt{values.yaml} ?}
+\begin{itemize}
+    \item[$\square$] À définir les secrets de l'application
+    \item[$\square$] À lister toutes les releases déployées
+    \item[$\square$] À contenir les valeurs par défaut pour les variables utilisées dans les templates
+    \item[$\square$] À spécifier les dépendances du Chart
+\end{itemize}
+
+\subsection*{Question 7 : Quelle syntaxe permet de référencer une variable dans un template Helm ?}
+\begin{itemize}
+    \item[$\square$] \texttt{\$\{.Values.ma.variable\}}
+    \item[$\square$] \texttt{\{\{ .Values.ma.variable \}\}}
+    \item[$\square$] \texttt{@Values.ma.variable@}
+    \item[$\square$] \texttt{<\%= Values.ma.variable \%>}
+\end{itemize}
+
+\subsection*{Question 8 : Quelle commande permet d'installer ou mettre à jour un Chart dans un namespace ?}
+\begin{itemize}
+    \item[$\square$] \texttt{helm deploy <name> <chart> --namespace <ns>}
+    \item[$\square$] \texttt{helm install <name> <chart> --namespace <ns>}
+    \item[$\square$] \texttt{helm upgrade <name> <chart> --namespace <ns>}
+    \item[$\square$] \texttt{helm apply <name> <chart> --namespace <ns>}
+\end{itemize}
+
+\subsection*{Question 9 : Comment packager un Chart Helm ?}
+\begin{itemize}
+    \item[$\square$] \texttt{helm build <chart-path>}
+    \item[$\square$] \texttt{helm package <chart-path>}
+    \item[$\square$] \texttt{helm create <chart-path>}
+    \item[$\square$] \texttt{helm zip <chart-path>}
+\end{itemize}
+
+\subsection*{Question 10 : Où sont stockés les Charts dépendants dans l'arborescence d'un Chart ?}
+\begin{itemize}
+    \item[$\square$] Dans le dossier \texttt{dependencies/}
+    \item[$\square$] Dans le dossier \texttt{charts/}
+    \item[$\square$] Dans le dossier \texttt{templates/}
+    \item[$\square$] Dans le fichier \texttt{Chart.yaml}
+\end{itemize}
+
+\subsection*{Question 11 : Comment spécifier une dépendance dans un Chart Helm ?}
+\begin{itemize}
+    \item[$\square$] En ajoutant une section \texttt{dependencies:} dans \texttt{Chart.yaml}
+    \item[$\square$] En créant un fichier \texttt{dependencies.yaml}
+    \item[$\square$] En utilisant la commande \texttt{helm add dependency}
+    \item[$\square$] En ajoutant le Chart dans le dossier \texttt{node\_modules/}
+\end{itemize}
+
+\subsection*{Question 12 : Quel fichier permet de définir des fonctions réutilisables dans un Chart ?}
+\begin{itemize}
+    \item[$\square$] \texttt{functions.yaml}
+    \item[$\square$] \texttt{\_helpers.tpl}
+    \item[$\square$] \texttt{utils.yaml}
+    \item[$\square$] \texttt{common.tpl}
+\end{itemize}
+
+\subsection*{Question 13 $\clubsuit$ : Quelles commandes permettent de surcharger des valeurs lors du déploiement d'un Chart ?}
+\begin{itemize}
+    \item[$\square$] \texttt{helm upgrade <name> -f values.yaml}
+    \item[$\square$] \texttt{helm upgrade <name> --set cle.variable='valeur'}
+    \item[$\square$] \texttt{helm upgrade <name> --values custom.yaml}
+    \item[$\square$] \texttt{helm upgrade <name> --override cle.variable='valeur'}
+\end{itemize}
+
+\subsection*{Question 14 : Quelle commande permet de voir l'historique des releases d'un Chart ?}
+\begin{itemize}
+    \item[$\square$] \texttt{helm logs <name>}
+    \item[$\square$] \texttt{helm history <name>}
+    \item[$\square$] \texttt{helm status <name>}
+    \item[$\square$] \texttt{helm list <name>}
+\end{itemize}
+
+\subsection*{Question 15 $\clubsuit$ : Quels sont les avantages de Helm pour Kubernetes ?}
+\begin{itemize}
+    \item[$\square$] Gestion reproductible des déploiements
+    \item[$\square$] Paramétrage des manifestes sans modification directe
+    \item[$\square$] Remplacement complet de kubectl
+    \item[$\square$] Infrastructure as Code (IaC)
+\end{itemize}
+
+\newpage
+
+\section*{Question ouverte :}
+
+\subsection*{Question 16 : Expliquez la différence entre un Chart et une Release dans Helm. Donnez un exemple concret d'utilisation.}
+
+\vspace{0.3cm}
+
+\noindent
+Rédigez ci-dessous \hfill $\square$ 0\% \quad $\square$ 25\% \quad $\square$ 50\% \quad $\square$ 75\% \quad $\square$ 100\%
+
+\vspace{0.3cm}
+
+\noindent
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+
+\vspace{1cm}
+
+\subsection*{Question 17 : Pourquoi est-il important de versionner ses Charts Helm ? Donnez deux raisons concrètes.}
+
+\vspace{0.3cm}
+
+\noindent
+Rédigez ci-dessous \hfill $\square$ 0\% \quad $\square$ 25\% \quad $\square$ 50\% \quad $\square$ 75\% \quad $\square$ 100\%
+
+\vspace{0.3cm}
+
+\noindent
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+
+\newpage
+
+\section*{Mise en situation :}
+
+\subsection*{Contexte : Déploiement multi-environnements}
+
+Vous êtes DevOps dans une entreprise qui développe une application web. Vous devez déployer cette application dans trois environnements différents :
+\begin{itemize}
+    \item \textbf{Développement} : 1 replica, 512 MB RAM, pas de ressources limitées
+    \item \textbf{Staging} : 2 replicas, 1 GB RAM, limites de ressources activées
+    \item \textbf{Production} : 5 replicas, 2 GB RAM, limites strictes, monitoring activé
+\end{itemize}
+
+L'application utilise une base de données PostgreSQL qui doit également être déployée avec des configurations différentes selon l'environnement.
+
+\vspace{0.5cm}
+
+\subsection*{Question 18 : Comment utiliseriez-vous Helm pour gérer ces trois environnements différents avec un seul Chart ? Décrivez l'organisation de votre Chart et expliquez comment vous géreriez les différentes configurations.}
+
+\vspace{0.3cm}
+
+\noindent
+Rédigez ci-dessous \hfill $\square$ 0\% \quad $\square$ 25\% \quad $\square$ 50\% \quad $\square$ 75\% \quad $\square$ 100\%
+
+\vspace{0.3cm}
+
+\noindent
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+
+\newpage
+
+\subsection*{Question 19 : Dans le contexte de la question 18, expliquez comment vous organiseriez les dépendances entre votre Chart applicatif et le Chart PostgreSQL. Justifiez votre approche.}
+
+\vspace{0.3cm}
+
+\noindent
+Rédigez ci-dessous \hfill $\square$ 0\% \quad $\square$ 25\% \quad $\square$ 50\% \quad $\square$ 75\% \quad $\square$ 100\%
+
+\vspace{0.3cm}
+
+\noindent
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+
+\vspace{1cm}
+
+\subsection*{Question 20 : Vous devez intégrer ce Chart Helm dans un pipeline CI/CD GitLab. Décrivez les étapes principales que vous mettriez en place, de la modification du code jusqu'au déploiement en production.}
+
+\vspace{0.3cm}
+
+\noindent
+Rédigez ci-dessous \hfill $\square$ 0\% \quad $\square$ 25\% \quad $\square$ 50\% \quad $\square$ 75\% \quad $\square$ 100\%
+
+\vspace{0.3cm}
+
+\noindent
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+\dotfill \\
+
+\vspace{1cm}
+
+\begin{center}
+\textbf{Fin du QCM}
+\end{center}
+
+\end{document}

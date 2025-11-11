@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: code-server
+  name: code-server
+spec:
+  selector:
+    matchLabels:
+      app: code-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: code-server
+    spec:
+      containers:
+      - env:
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: coder-password
+              key: password
+        image: codercom/code-server:latest
+        imagePullPolicy: Always
+        name: code-server
+        ports:
+        - name: code-server
+          containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /home/coder
+          name: coder
+      initContainers:
+      - name: pvc-permission-fix
+        image: busybox
+        command: ["/bin/chmod","-R","777", "/home/coder"]
+        volumeMounts:
+        - name: coder
+          mountPath: /home/coder
+      volumes:
+      - name: coder
+        persistentVolumeClaim:
+          claimName: code-server

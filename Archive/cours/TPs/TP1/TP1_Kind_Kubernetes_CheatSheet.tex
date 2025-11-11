@@ -1,0 +1,566 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\geometry{top=2cm, bottom=2cm, left=2cm, right=2cm}
+
+% Configuration des listings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    tabsize=2
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{TP1 -- Kubernetes avec Kind}
+\fancyhead[R]{R5.09 -- 2024/2025}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{TP1 : Installation et Configuration Kubernetes}\\
+\large Cluster local avec Kind et premiers déploiements}
+\author{IUT Grand Ouest Normandie -- BUT Informatique S5}
+\date{Année 2024/2025}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Prérequis et environnement}
+
+\subsection{Configuration système recommandée}
+
+\textbf{Machine physique} : Recommandé pour des performances optimales
+
+\textbf{Ressources minimales} :
+\begin{itemize}
+    \item CPU : 4 cores
+    \item RAM : 8 GB
+    \item Disque : 40 GB disponibles
+    \item OS : Linux (Ubuntu 22.04+, Debian 12+, Parrot OS)
+\end{itemize}
+
+\subsection{Configuration VM Proxmox (si nécessaire)}
+
+\textbf{Type CPU} : Changer de \texttt{x86-64-v2-AES} à \texttt{host}
+
+\begin{lstlisting}[language=bash]
+# Sur l'hote Proxmox, verifier la virtualisation imbriquee
+# Intel :
+cat /sys/module/kvm_intel/parameters/nested
+
+# AMD :
+cat /sys/module/kvm_amd/parameters/nested
+
+# Si retourne N ou 0, activer :
+# Intel :
+echo "options kvm_intel nested=1" > /etc/modprobe.d/kvm-intel.conf
+modprobe -r kvm_intel
+modprobe kvm_intel
+
+# AMD :
+echo "options kvm_amd nested=1" > /etc/modprobe.d/kvm-amd.conf
+modprobe -r kvm_amd
+modprobe kvm_amd
+\end{lstlisting}
+
+\textbf{Dans la VM, verifier les flags CPU} :
+
+\begin{lstlisting}[language=bash]
+grep -E 'vmx|svm' /proc/cpuinfo
+ls -la /dev/kvm
+\end{lstlisting}
+
+\subsection{Vérification Docker}
+
+\begin{lstlisting}[language=bash]
+# Verifier Docker
+docker --version
+docker info | grep -E "Cgroup|Kernel"
+
+# Doit afficher :
+# Cgroup Driver: systemd
+# Cgroup Version: 2
+\end{lstlisting}
+
+\section{Installation de Kind}
+
+\subsection{Installation sur Linux}
+
+\begin{lstlisting}[language=bash]
+# Telecharger et installer Kind
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+# Verifier l'installation
+kind version
+\end{lstlisting}
+
+\subsection{Installation de kubectl}
+
+\begin{lstlisting}[language=bash]
+# Telecharger kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+# Installer
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Verifier
+kubectl version --client
+\end{lstlisting}
+
+\section{Création du cluster Kind}
+
+\subsection{Cluster simple (single-node)}
+
+\begin{lstlisting}[language=bash]
+# Creer un cluster basique
+kind create cluster --name mon-cluster
+
+# Verifier le cluster
+kubectl cluster-info --context kind-mon-cluster
+kubectl get nodes
+\end{lstlisting}
+
+\subsection{Cluster avec support Ingress}
+
+Créer le fichier \texttt{kind-ingress-config.yaml} :
+
+\begin{lstlisting}[language=yaml]
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash]
+# Creer le cluster avec configuration
+kind create cluster --config kind-ingress-config.yaml --name cluster-ingress
+
+# Verifier
+kubectl get nodes
+docker ps | grep kind
+\end{lstlisting}
+
+\subsection{Commandes Kind essentielles}
+
+\begin{lstlisting}[language=bash]
+# Lister les clusters
+kind get clusters
+
+# Obtenir le kubeconfig
+kind get kubeconfig --name cluster-ingress
+
+# Charger une image Docker dans le cluster
+docker pull nginx:latest
+kind load docker-image nginx:latest --name cluster-ingress
+
+# Supprimer un cluster
+kind delete cluster --name cluster-ingress
+\end{lstlisting}
+
+\section{Installation Ingress NGINX}
+
+\subsection{Déploiement du contrôleur}
+
+\begin{lstlisting}[language=bash]
+# Installer ingress-nginx
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+# Attendre que le controleur soit pret
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+
+# Verifier
+kubectl get pods -n ingress-nginx
+kubectl get svc -n ingress-nginx
+\end{lstlisting}
+
+\subsection{Troubleshooting Ingress}
+
+\textbf{Problème : Webhook validation timeout}
+
+\begin{lstlisting}[language=bash]
+# Verifier l'etat
+kubectl get pods -n ingress-nginx
+
+# Si jobs admission en erreur, creer le secret manuellement
+kubectl create secret generic ingress-nginx-admission \
+  --from-literal=cert=dummy \
+  --from-literal=key=dummy \
+  -n ingress-nginx
+
+# Supprimer le webhook (environnement de test)
+kubectl delete validatingwebhookconfiguration ingress-nginx-admission
+
+# Redemarrer le controleur
+kubectl rollout restart deployment/ingress-nginx-controller -n ingress-nginx
+
+# Attendre
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=180s
+\end{lstlisting}
+
+\section{Premier déploiement : nginx}
+
+\subsection{Manifeste Deployment}
+
+Créer \texttt{nginx-deployment.yaml} :
+
+\begin{lstlisting}[language=yaml]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27
+        ports:
+        - containerPort: 80
+\end{lstlisting}
+
+\subsection{Manifeste Service}
+
+Créer \texttt{nginx-service.yaml} :
+
+\begin{lstlisting}[language=yaml]
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+\end{lstlisting}
+
+\subsection{Manifeste Ingress}
+
+Créer \texttt{nginx-ingress.yaml} :
+
+\begin{lstlisting}[language=yaml]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: nginx.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+\end{lstlisting}
+
+\subsection{Déploiement et test}
+
+\begin{lstlisting}[language=bash]
+# Appliquer les manifestes
+kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-service.yaml
+kubectl apply -f nginx-ingress.yaml
+
+# Verifier
+kubectl get pods -l app=nginx
+kubectl get svc nginx-service
+kubectl get ingress nginx-ingress
+
+# Ajouter l'entree DNS
+echo "127.0.0.1 nginx.local" | sudo tee -a /etc/hosts
+
+# Tester
+curl http://nginx.local
+\end{lstlisting}
+
+\section{Accès via IP LAN}
+
+\subsection{Configuration réseau}
+
+\begin{lstlisting}[language=bash]
+# Trouver votre IP LAN
+hostname -I | awk '{print $1}'
+
+# Verifier que kind ecoute sur toutes les interfaces
+sudo ss -tulpn | grep :80
+# Devrait afficher : 0.0.0.0:80
+\end{lstlisting}
+
+\subsection{Accès depuis d'autres machines}
+
+Sur les machines clientes (par exemple IP serveur : 192.168.56.11) :
+
+\begin{lstlisting}[language=bash]
+# Ajouter l'entree DNS
+echo "192.168.56.11 nginx.local" | sudo tee -a /etc/hosts
+
+# Tester
+curl http://nginx.local
+
+# Ou avec header Host
+curl -H "Host: nginx.local" http://192.168.56.11
+\end{lstlisting}
+
+\section{Commandes kubectl essentielles}
+
+\subsection{Gestion des ressources}
+
+\begin{lstlisting}[language=bash]
+# Lister les pods
+kubectl get pods
+kubectl get pods -o wide
+kubectl get pods --all-namespaces
+
+# Lister les deployments
+kubectl get deployments
+
+# Lister les services
+kubectl get services
+
+# Lister les ingress
+kubectl get ingress
+
+# Tout voir
+kubectl get all
+kubectl get all -A
+\end{lstlisting}
+
+\subsection{Informations détaillées}
+
+\begin{lstlisting}[language=bash]
+# Describe (details complets)
+kubectl describe pod <pod-name>
+kubectl describe deployment <deployment-name>
+kubectl describe service <service-name>
+
+# Logs
+kubectl logs <pod-name>
+kubectl logs <pod-name> -f  # follow
+kubectl logs deployment/<deployment-name>
+
+# Events
+kubectl get events --sort-by='.lastTimestamp'
+\end{lstlisting}
+
+\subsection{Manipulation des ressources}
+
+\begin{lstlisting}[language=bash]
+# Appliquer un manifest
+kubectl apply -f fichier.yaml
+kubectl apply -f repertoire/
+
+# Supprimer des ressources
+kubectl delete -f fichier.yaml
+kubectl delete pod <pod-name>
+kubectl delete deployment <deployment-name>
+
+# Modifier une ressource
+kubectl edit deployment <deployment-name>
+
+# Scaler un deployment
+kubectl scale deployment <deployment-name> --replicas=3
+\end{lstlisting}
+
+\subsection{Exec et port-forward}
+
+\begin{lstlisting}[language=bash]
+# Executer une commande dans un pod
+kubectl exec <pod-name> -- ls /
+kubectl exec -it <pod-name> -- /bin/bash
+
+# Port-forward
+kubectl port-forward pod/<pod-name> 8080:80
+kubectl port-forward service/<service-name> 8080:80
+\end{lstlisting}
+
+\section{Contextes et namespaces}
+
+\subsection{Gestion des contextes}
+
+\begin{lstlisting}[language=bash]
+# Lister les contextes
+kubectl config get-contexts
+
+# Changer de contexte
+kubectl config use-context kind-cluster-ingress
+
+# Voir le contexte actuel
+kubectl config current-context
+\end{lstlisting}
+
+\subsection{Gestion des namespaces}
+
+\begin{lstlisting}[language=bash]
+# Lister les namespaces
+kubectl get namespaces
+
+# Creer un namespace
+kubectl create namespace dev
+
+# Definir un namespace par defaut
+kubectl config set-context --current --namespace=dev
+
+# Deployer dans un namespace specifique
+kubectl apply -f fichier.yaml -n dev
+kubectl get pods -n dev
+\end{lstlisting}
+
+\section{Nettoyage}
+
+\begin{lstlisting}[language=bash]
+# Supprimer les ressources
+kubectl delete -f nginx-ingress.yaml
+kubectl delete -f nginx-service.yaml
+kubectl delete -f nginx-deployment.yaml
+
+# Supprimer le cluster
+kind delete cluster --name cluster-ingress
+
+# Retirer l'entree /etc/hosts
+sudo sed -i '/nginx.local/d' /etc/hosts
+\end{lstlisting}
+
+\section{Troubleshooting}
+
+\subsection{Problèmes courants}
+
+\textbf{ImagePullBackOff} :
+\begin{lstlisting}[language=bash]
+# Charger l'image dans Kind
+docker pull nginx:1.27
+kind load docker-image nginx:1.27 --name cluster-ingress
+\end{lstlisting}
+
+\textbf{CrashLoopBackOff} :
+\begin{lstlisting}[language=bash]
+# Voir les logs
+kubectl logs <pod-name>
+kubectl logs <pod-name> --previous
+
+# Voir les events
+kubectl describe pod <pod-name>
+\end{lstlisting}
+
+\textbf{Pods Pending} :
+\begin{lstlisting}[language=bash]
+# Verifier les ressources des nodes
+kubectl describe nodes
+
+# Verifier les events
+kubectl get events --sort-by='.lastTimestamp'
+\end{lstlisting}
+
+\textbf{Service ne répond pas} :
+\begin{lstlisting}[language=bash]
+# Verifier les endpoints
+kubectl get endpoints <service-name>
+
+# Verifier les labels
+kubectl get pods --show-labels
+kubectl describe service <service-name>
+\end{lstlisting}
+
+\section{Cheat Sheet rapide}
+
+\begin{lstlisting}[language=bash]
+# CLUSTER
+kind create cluster --name mon-cluster
+kind delete cluster --name mon-cluster
+kind get clusters
+
+# DEPLOIEMENT
+kubectl apply -f fichier.yaml
+kubectl delete -f fichier.yaml
+
+# VISUALISATION
+kubectl get pods
+kubectl get all
+kubectl describe pod <nom>
+kubectl logs <pod-name>
+
+# MANIPULATION
+kubectl scale deployment <nom> --replicas=3
+kubectl exec -it <pod> -- /bin/bash
+kubectl port-forward svc/<service> 8080:80
+
+# DEBUG
+kubectl get events --sort-by='.lastTimestamp'
+kubectl logs <pod> --previous
+kubectl describe pod <pod>
+
+# CONTEXTE
+kubectl config get-contexts
+kubectl config use-context <context>
+kubectl config set-context --current --namespace=<ns>
+\end{lstlisting}
+
+\section{Ressources utiles}
+
+\begin{itemize}
+    \item Documentation Kind : \url{https://kind.sigs.k8s.io/}
+    \item Documentation Kubernetes : \url{https://kubernetes.io/docs/}
+    \item Ingress NGINX : \url{https://kubernetes.github.io/ingress-nginx/}
+    \item kubectl Cheat Sheet : \url{https://kubernetes.io/docs/reference/kubectl/cheatsheet/}
+\end{itemize}
+
+\end{document}

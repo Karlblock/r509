@@ -1,0 +1,36 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}Prérequis et environnement}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Configuration système recommandée}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Configuration VM Proxmox (si nécessaire)}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Vérification Docker}{3}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Installation de Kind}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Installation sur Linux}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Installation de kubectl}{4}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Création du cluster Kind}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Cluster simple (single-node)}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Cluster avec support Ingress}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Commandes Kind essentielles}{5}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Installation Ingress NGINX}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Déploiement du contrôleur}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Troubleshooting Ingress}{5}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Premier déploiement : nginx}{6}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Manifeste Deployment}{6}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Manifeste Service}{6}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Manifeste Ingress}{6}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Déploiement et test}{7}{subsection.5.4}%
+\contentsline {section}{\numberline {6}Accès via IP LAN}{7}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Configuration réseau}{7}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Accès depuis d'autres machines}{7}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Commandes kubectl essentielles}{7}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Gestion des ressources}{7}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Informations détaillées}{8}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Manipulation des ressources}{8}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Exec et port-forward}{8}{subsection.7.4}%
+\contentsline {section}{\numberline {8}Contextes et namespaces}{9}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Gestion des contextes}{9}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Gestion des namespaces}{9}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Nettoyage}{9}{section.9}%
+\contentsline {section}{\numberline {10}Troubleshooting}{9}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Problèmes courants}{9}{subsection.10.1}%
+\contentsline {section}{\numberline {11}Cheat Sheet rapide}{10}{section.11}%
+\contentsline {section}{\numberline {12}Ressources utiles}{11}{section.12}%

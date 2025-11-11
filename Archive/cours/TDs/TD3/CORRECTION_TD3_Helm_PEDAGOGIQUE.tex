@@ -1,0 +1,1393 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm, headheight=14pt}
+
+% Configuration des listings
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    breakatwhitespace=false,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    xleftmargin=15pt,
+    xrightmargin=5pt,
+    tabsize=2,
+    aboveskip=8pt,
+    belowskip=8pt,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\newtcolorbox{infobox}[1]{
+    colback=blue!5!white,
+    colframe=blue!75!black,
+    fonttitle=\bfseries,
+    title=#1
+}
+
+\newtcolorbox{warningbox}[1]{
+    colback=orange!5!white,
+    colframe=orange!75!black,
+    fonttitle=\bfseries,
+    title=#1
+}
+
+\newtcolorbox{successbox}[1]{
+    colback=green!5!white,
+    colframe=green!75!black,
+    fonttitle=\bfseries,
+    title=#1
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Correction TD3 -- Helm (Version Pédagogique)}
+\fancyhead[R]{R5.09 -- 2024/2025}
+\fancyfoot[C]{\thepage}
+
+\title{\textbf{Correction TD3 : Helm}\\
+\large Gestionnaire de packages pour Kubernetes\\
+\textit{Version pédagogique avec explications détaillées}}
+\author{Maxime Lambert\\
+IUT Grand Ouest Normandie -- BUT Informatique S5}
+\date{Année 2024/2025}
+
+\begin{document}
+
+\pagenumbering{gobble}
+\maketitle
+\thispagestyle{empty}
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Introduction}
+
+Ce document présente la correction complète du TD3 sur Helm, le gestionnaire de packages pour Kubernetes. Chaque exercice est accompagné d'explications détaillées pour faciliter la compréhension des concepts.
+
+\begin{infobox}{Qu'est-ce que Helm ?}
+Helm est un gestionnaire de packages pour Kubernetes qui permet de :
+\begin{itemize}
+    \item \textbf{Packager} des applications Kubernetes en \textit{Charts} (ensemble de fichiers YAML)
+    \item \textbf{Versioner} vos déploiements
+    \item \textbf{Partager} des configurations réutilisables
+    \item \textbf{Gérer} le cycle de vie des applications (installation, mise à jour, rollback)
+\end{itemize}
+\end{infobox}
+
+\subsection{Prérequis}
+
+\begin{itemize}
+    \item Cluster Kubernetes fonctionnel (Minikube, Kind, ou autre)
+    \item Helm 3 installé (\texttt{helm version})
+    \item kubectl configuré et fonctionnel
+    \item Connaissances des ressources Kubernetes de base (Pod, Service, Deployment, PVC)
+\end{itemize}
+
+\subsection{Objectifs pédagogiques}
+
+À la fin de ce TD, vous serez capables de :
+\begin{itemize}
+    \item Créer un Chart Helm depuis zéro
+    \item Gérer des dépendances entre Charts
+    \item Variabiliser vos configurations avec \texttt{values.yaml}
+    \item Utiliser des templates Helm et des helpers
+    \item Appliquer les bonnes pratiques de packaging
+\end{itemize}
+
+\newpage
+
+\section{Exercice 1 : À la découverte de Helm}
+
+\subsection{Objectif}
+
+Créer votre premier Chart Helm pour déployer une application Code Server (VS Code dans le navigateur).
+
+\subsection{Concepts clés}
+
+\begin{infobox}{Structure d'un Chart Helm}
+Un Chart Helm est un répertoire contenant :
+\begin{itemize}
+    \item \texttt{Chart.yaml} : Métadonnées du Chart (nom, version, description)
+    \item \texttt{templates/} : Fichiers YAML des ressources Kubernetes
+    \item \texttt{values.yaml} : Valeurs par défaut configurables (optionnel)
+    \item \texttt{charts/} : Dépendances (sous-Charts)
+\end{itemize}
+\end{infobox}
+
+\subsection{Solution pas à pas}
+
+\subsubsection{Étape 1 : Installation de Helm}
+
+\begin{lstlisting}[language=bash, caption={Installation de Helm 3}]
+# Sur Linux
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Verification de l'installation
+helm version
+# Resultat attendu : version.BuildInfo{Version:"v3.x.x", ...}
+\end{lstlisting}
+
+\begin{infobox}{Pourquoi Helm 3 ?}
+Helm 3 a supprimé le composant serveur "Tiller" de Helm 2, ce qui :
+\begin{itemize}
+    \item Simplifie l'architecture (plus de démon côté serveur)
+    \item Améliore la sécurité (utilise directement vos credentials kubectl)
+    \item Facilite l'installation (juste un binaire)
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 2 : Création de la structure du Chart}
+
+\begin{lstlisting}[language=bash, caption={Création du répertoire et de la structure}]
+# Creer le repertoire du projet
+mkdir ~/testlab
+cd ~/testlab
+
+# Creer la structure du Chart
+mkdir -p vs-code-chart/templates
+mkdir -p vs-code-chart/charts
+\end{lstlisting}
+
+\begin{warningbox}{Bonnes pratiques}
+\begin{itemize}
+    \item Nommez vos Charts en \texttt{kebab-case} (minuscules avec tirets)
+    \item Le nom doit être descriptif de l'application
+    \item Ne pas utiliser d'espaces ou de caractères spéciaux
+\end{itemize}
+\end{warningbox}
+
+\subsubsection{Étape 3 : Création du fichier Chart.yaml}
+
+\begin{lstlisting}[caption={vs-code-chart/Chart.yaml}]
+apiVersion: v2
+name: vs-code-chart
+description: A Helm chart for my application
+version: 0.1
+\end{lstlisting}
+
+\begin{infobox}{Explication des champs}
+\begin{itemize}
+    \item \texttt{apiVersion: v2} : Version de l'API Helm (v2 pour Helm 3)
+    \item \texttt{name} : Nom du Chart (doit correspondre au nom du répertoire)
+    \item \texttt{description} : Description courte de l'application
+    \item \texttt{version: 0.1} : Version du Chart (suivre le SemVer : MAJOR.MINOR.PATCH)
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsubsection{Étape 4 : Création des templates Kubernetes}
+
+\paragraph{Template du Deployment}
+
+\begin{lstlisting}[caption={vs-code-chart/templates/deployment.yaml}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-server
+  labels:
+    app: code-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code-server
+  template:
+    metadata:
+      labels:
+        app: code-server
+    spec:
+      containers:
+      - name: code-server
+        image: codercom/code-server:latest
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: code-server-storage
+          mountPath: /home/coder
+      volumes:
+      - name: code-server-storage
+        persistentVolumeClaim:
+          claimName: code-server-pvc
+\end{lstlisting}
+
+\begin{infobox}{Rôle du Deployment}
+Le Deployment :
+\begin{itemize}
+    \item Gère le cycle de vie des Pods
+    \item Assure qu'1 réplica de code-server tourne en permanence
+    \item Monte un volume persistant pour sauvegarder les données utilisateur
+    \item Redémarre automatiquement le pod en cas de crash
+\end{itemize}
+\end{infobox}
+
+\paragraph{Template du Service}
+
+\begin{lstlisting}[caption={vs-code-chart/templates/service.yaml}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: code-server
+  labels:
+    app: code-server
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  selector:
+    app: code-server
+\end{lstlisting}
+
+\begin{infobox}{Type de Service : NodePort}
+NodePort expose le service sur un port du nœud Kubernetes :
+\begin{itemize}
+    \item \texttt{port: 8080} : Port du Service (dans le cluster)
+    \item \texttt{targetPort: 8080} : Port du conteneur
+    \item \texttt{nodePort: 30080} : Port exposé sur l'hôte (plage 30000-32767)
+    \item Accessible via \texttt{<IP-du-noeud>:30080}
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\paragraph{Template du PVC}
+
+\begin{lstlisting}[caption={vs-code-chart/templates/pvc.yaml}]
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-server-pvc
+  labels:
+    app: code-server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+\end{lstlisting}
+
+\begin{infobox}{PersistentVolumeClaim (PVC)}
+Le PVC demande un volume de stockage persistant :
+\begin{itemize}
+    \item \texttt{ReadWriteOnce} : Le volume peut être monté par un seul nœud
+    \item \texttt{5Gi} : Taille du volume demandé
+    \item Le stockage persiste même si le pod est supprimé
+    \item Kubernetes provisionne automatiquement le volume via le StorageClass
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 5 : Packaging du Chart}
+
+\begin{lstlisting}[language=bash, caption={Création du package .tgz}]
+# Retour au repertoire parent
+cd ~/testlab
+
+# Packager le Chart
+helm package vs-code-chart
+
+# Resultat : vs-code-chart-0.1.tgz
+ls -lh vs-code-chart-0.1.tgz
+\end{lstlisting}
+
+\begin{infobox}{Qu'est-ce qu'un package Helm ?}
+\texttt{helm package} crée une archive .tgz contenant :
+\begin{itemize}
+    \item Tous les fichiers du Chart
+    \item Les métadonnées du Chart.yaml
+    \item Un hash pour vérifier l'intégrité
+    \item Cette archive peut être partagée et installée facilement
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 6 : Installation du Chart}
+
+\begin{lstlisting}[language=bash, caption={Déploiement du Chart}]
+# Creer le namespace
+kubectl create namespace td3
+
+# Installer le Chart
+helm upgrade --install vs-code-release \
+  vs-code-chart-0.1.tgz \
+  --namespace td3
+
+# Verifier l'installation
+helm list -n td3
+kubectl get all,pvc -n td3
+\end{lstlisting}
+
+\begin{infobox}{Commande helm upgrade --install}
+Cette commande :
+\begin{itemize}
+    \item \texttt{--install} : Installe si la release n'existe pas
+    \item \texttt{--upgrade} : Met à jour si la release existe déjà
+    \item \texttt{vs-code-release} : Nom de la release (peut être différent du Chart)
+    \item \texttt{--namespace td3} : Namespace où déployer
+    \item Idempotente : peut être relancée sans problème
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsubsection{Étape 7 : Vérification}
+
+\begin{lstlisting}[language=bash, caption={Tests de vérification}]
+# Verifier l'historique des releases
+helm history vs-code-release -n td3
+
+# Tester la connectivite
+kubectl run test-curl --rm -it --restart=Never \
+  --image=curlimages/curl \
+  -- curl -I http://code-server:8080
+
+# Resultat attendu : HTTP/1.1 302 Found (redirection vers /login)
+\end{lstlisting}
+
+\begin{successbox}{Exercice 1 terminé !}
+Vous avez créé et déployé votre premier Chart Helm contenant :
+\begin{itemize}
+    \item 1 Deployment (code-server)
+    \item 1 Service (NodePort sur port 30080)
+    \item 1 PVC (5Gi de stockage)
+\end{itemize}
+Version du Chart : \textbf{0.1}
+\end{successbox}
+
+\newpage
+
+\section{Exercice 2 : Améliorer la modularité}
+
+\subsection{Objectif}
+
+Séparer la gestion du stockage dans un Chart dédié pour améliorer la réutilisabilité.
+
+\subsection{Concepts clés}
+
+\begin{infobox}{Pourquoi séparer en sous-Charts ?}
+La modularité apporte plusieurs avantages :
+\begin{itemize}
+    \item \textbf{Réutilisabilité} : Le storage-chart peut être utilisé par d'autres applications
+    \item \textbf{Séparation des responsabilités} : Stockage vs Application
+    \item \textbf{Versioning indépendant} : Le stockage évolue indépendamment de l'app
+    \item \textbf{Maintenance facilitée} : Modifications isolées
+\end{itemize}
+\end{infobox}
+
+\subsection{Solution pas à pas}
+
+\subsubsection{Étape 1 : Création du Chart de stockage}
+
+\begin{lstlisting}[language=bash, caption={Structure du storage-chart}]
+# Creer la structure
+mkdir -p storage-chart/templates
+
+# Creer le Chart.yaml
+cat > storage-chart/Chart.yaml <<EOF
+apiVersion: v2
+name: storage-chart
+description: Storage management for applications
+version: 0.1
+EOF
+\end{lstlisting}
+
+\subsubsection{Étape 2 : Déplacer le PVC}
+
+\begin{lstlisting}[caption={storage-chart/templates/pvc.yaml}]
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-server-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+\end{lstlisting}
+
+\begin{warningbox}{Attention au nom du PVC}
+Le nom \texttt{code-server-pvc} doit rester identique pour que le Deployment puisse le référencer via \texttt{claimName: code-server-pvc}.
+\end{warningbox}
+
+\subsubsection{Étape 3 : Packaging du storage-chart}
+
+\begin{lstlisting}[language=bash, caption={Création du package storage}]
+cd ~/testlab
+helm package storage-chart
+
+# Resultat : storage-chart-0.1.tgz
+\end{lstlisting}
+
+\newpage
+
+\subsubsection{Étape 4 : Déclaration de la dépendance}
+
+\begin{lstlisting}[caption={vs-code-chart/Chart.yaml (version 0.2)}]
+apiVersion: v2
+name: vs-code-chart
+description: A Helm chart for my application
+version: 0.2
+dependencies:
+  - name: storage-chart
+    version: 0.1
+    repository: "file://../storage-chart-0.1.tgz"
+\end{lstlisting}
+
+\begin{infobox}{Section dependencies}
+Chaque dépendance spécifie :
+\begin{itemize}
+    \item \texttt{name} : Nom du Chart dépendant
+    \item \texttt{version} : Version exacte requise
+    \item \texttt{repository} : Où trouver le Chart
+    \begin{itemize}
+        \item \texttt{file://} : Fichier local
+        \item \texttt{https://} : Repository Helm distant
+    \end{itemize}
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 5 : Suppression du PVC du Chart principal}
+
+\begin{lstlisting}[language=bash, caption={Nettoyage}]
+# Supprimer le PVC du Chart principal
+rm vs-code-chart/templates/pvc.yaml
+
+# Le PVC sera maintenant gere par storage-chart
+\end{lstlisting}
+
+\subsubsection{Étape 6 : Ajout de la dépendance au Chart}
+
+\begin{lstlisting}[language=bash, caption={Installation de la dépendance}]
+# Copier le package dans le repertoire charts/
+cp storage-chart-0.1.tgz vs-code-chart/charts/
+
+# Packager la nouvelle version
+helm package vs-code-chart
+
+# Resultat : vs-code-chart-0.2.tgz
+\end{lstlisting}
+
+\begin{infobox}{Répertoire charts/}
+Le répertoire \texttt{charts/} contient les Charts dépendants :
+\begin{itemize}
+    \item Peuvent être des packages .tgz
+    \item Ou des sous-répertoires de Charts
+    \item Helm les installe automatiquement avec le Chart parent
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 7 : Déploiement de la version 0.2}
+
+\begin{lstlisting}[language=bash, caption={Mise à jour du déploiement}]
+# Desinstaller l'ancienne version proprement
+helm uninstall vs-code-release -n td3
+kubectl delete pvc code-server-pvc -n td3
+
+# Installer la nouvelle version
+helm install vs-code-release vs-code-chart-0.2.tgz \
+  --namespace td3
+
+# Verifier
+helm list -n td3
+kubectl get all,pvc -n td3
+\end{lstlisting}
+
+\newpage
+
+\begin{successbox}{Exercice 2 terminé !}
+Vous avez modularisé votre Chart :
+\begin{itemize}
+    \item \textbf{storage-chart v0.1} : Gère le PVC
+    \item \textbf{vs-code-chart v0.2} : Dépend de storage-chart
+    \item Architecture plus maintenable et réutilisable
+\end{itemize}
+\end{successbox}
+
+\newpage
+
+\section{Exercice 3 : Variabilisation avec values.yaml}
+
+\subsection{Objectif}
+
+Rendre le Chart configurable en externalisant les valeurs dans \texttt{values.yaml}.
+
+\subsection{Concepts clés}
+
+\begin{infobox}{Pourquoi variabiliser ?}
+La variabilisation permet :
+\begin{itemize}
+    \item \textbf{Configuration sans modifier les templates}
+    \item \textbf{Environnements multiples} : dev, staging, prod
+    \item \textbf{Personnalisation} : Chaque utilisateur peut adapter
+    \item \textbf{Surcharge} : \texttt{--set} ou fichiers values distincts
+\end{itemize}
+\end{infobox}
+
+\subsection{Solution pas à pas}
+
+\subsubsection{Étape 1 : Création du fichier values.yaml}
+
+\begin{lstlisting}[caption={vs-code-chart/values.yaml}]
+# Configuration de l'application
+app:
+  name: code-server
+  image:
+    repository: codercom/code-server
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  service:
+    type: NodePort
+    port: 8080
+    nodePort: 30080
+
+  storage:
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+\end{lstlisting}
+
+\begin{infobox}{Structure du values.yaml}
+Organisation hiérarchique recommandée :
+\begin{itemize}
+    \item Regrouper par composant (\texttt{app}, \texttt{database}, etc.)
+    \item Sous-groupes logiques (\texttt{image}, \texttt{resources}, etc.)
+    \item Noms explicites et cohérents
+    \item Commentaires pour documenter les valeurs
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsubsection{Étape 2 : Modification du template Deployment}
+
+\begin{lstlisting}[caption={templates/deployment.yaml variabilisé}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+    app: {{ .Values.app.name }}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+      - name: {{ .Values.app.name }}
+        image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+        imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: {{ .Values.app.resources.requests.cpu }}
+            memory: {{ .Values.app.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.app.resources.limits.cpu }}
+            memory: {{ .Values.app.resources.limits.memory }}
+        volumeMounts:
+        - name: code-server-storage
+          mountPath: /home/coder
+      volumes:
+      - name: code-server-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.app.name }}-pvc
+\end{lstlisting}
+
+\begin{infobox}{Syntaxe des templates Helm}
+Helm utilise le langage de template Go :
+\begin{itemize}
+    \item \texttt{\{\{ .Values.xxx \}\}} : Accès aux valeurs du values.yaml
+    \item \texttt{\{\{ .Release.Name \}\}} : Nom de la release
+    \item \texttt{\{\{ .Chart.Version \}\}} : Version du Chart
+    \item \texttt{"..."} : Guillemets pour forcer le type string
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 3 : Modification du template Service}
+
+\begin{lstlisting}[caption={templates/service.yaml variabilisé}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+    app: {{ .Values.app.name }}
+spec:
+  type: {{ .Values.app.service.type }}
+  ports:
+  - port: {{ .Values.app.service.port }}
+    targetPort: 8080
+    nodePort: {{ .Values.app.service.nodePort }}
+  selector:
+    app: {{ .Values.app.name }}
+\end{lstlisting}
+
+\newpage
+
+\subsubsection{Étape 4 : Packaging et déploiement}
+
+\begin{lstlisting}[language=bash, caption={Mise à jour vers v0.3}]
+# Mettre a jour le Chart.yaml
+cat > vs-code-chart/Chart.yaml <<EOF
+apiVersion: v2
+name: vs-code-chart
+description: A Helm chart for my application
+version: 0.3
+dependencies:
+  - name: storage-chart
+    version: 0.1
+    repository: "file://../storage-chart-0.1.tgz"
+EOF
+
+# Packager
+helm package vs-code-chart
+
+# Deployer
+helm upgrade vs-code-release vs-code-chart-0.3.tgz \
+  --namespace td3
+\end{lstlisting}
+
+\subsubsection{Étape 5 : Tester la variabilisation}
+
+\begin{lstlisting}[language=bash, caption={Exemples de surcharge de valeurs}]
+# Changer le nombre de replicas
+helm upgrade vs-code-release vs-code-chart-0.3.tgz \
+  --namespace td3 \
+  --set app.replicas=2
+
+# Changer la version de l'image
+helm upgrade vs-code-release vs-code-chart-0.3.tgz \
+  --namespace td3 \
+  --set app.image.tag=4.10.0
+
+# Utiliser un fichier values personnalise
+cat > values-prod.yaml <<EOF
+app:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+EOF
+
+helm upgrade vs-code-release vs-code-chart-0.3.tgz \
+  --namespace td3 \
+  --values values-prod.yaml
+\end{lstlisting}
+
+\begin{infobox}{Ordre de priorité des valeurs}
+Helm fusionne les valeurs dans cet ordre (du moins au plus prioritaire) :
+\begin{enumerate}
+    \item Valeurs par défaut du values.yaml du Chart
+    \item Valeurs des Charts parents
+    \item Fichier values fourni avec \texttt{--values}
+    \item Valeurs individuelles avec \texttt{--set}
+\end{enumerate}
+\end{infobox}
+
+\begin{successbox}{Exercice 3 terminé !}
+Votre Chart est maintenant entièrement configurable :
+\begin{itemize}
+    \item Fichier \texttt{values.yaml} avec toutes les valeurs
+    \item Templates variabilisés avec \texttt{\{\{ .Values.* \}\}}
+    \item Possibilité de surcharger avec \texttt{--set} ou \texttt{--values}
+\end{itemize}
+Version du Chart : \textbf{0.3}
+\end{successbox}
+
+\newpage
+
+\section{Exercice 4 : Chart commun avec helpers}
+
+\subsection{Objectif}
+
+Créer un Chart contenant des labels standardisés réutilisables via des helpers.
+
+\subsection{Concepts clés}
+
+\begin{infobox}{Qu'est-ce qu'un helper ?}
+Un helper est un template nommé réutilisable :
+\begin{itemize}
+    \item Défini dans \texttt{\_helpers.tpl}
+    \item Peut être appelé depuis n'importe quel template
+    \item Évite la duplication de code
+    \item Pratique pour labels, annotations, sélecteurs
+\end{itemize}
+\end{infobox}
+
+\subsection{Solution pas à pas}
+
+\subsubsection{Étape 1 : Création du common-chart}
+
+\begin{lstlisting}[language=bash, caption={Structure du Chart commun}]
+# Creer la structure
+mkdir -p common-chart/templates
+
+# Creer le Chart.yaml
+cat > common-chart/Chart.yaml <<EOF
+apiVersion: v2
+name: common-chart
+description: Common labels and helpers
+version: 0.1
+EOF
+\end{lstlisting}
+
+\subsubsection{Étape 2 : Création du fichier de helpers}
+
+\begin{lstlisting}[caption={common-chart/templates/\_helpers.tpl}]
+{{- define "common-chart.labels" -}}
+orga: "IUT-C3"
+res: "R5-09"
+app: {{ .Values.app.name | default "myapp" }}
+version: {{ .Release.Name }}
+managed-by: {{ .Release.Service }}
+{{- end }}
+\end{lstlisting}
+
+\begin{infobox}{Syntaxe des helpers}
+\begin{itemize}
+    \item \texttt{\{\{- define "nom" -\}\}} : Définit un helper nommé
+    \item \texttt{\{\{- end \}\}} : Fin de la définition
+    \item Le \texttt{-} supprime les espaces/retours à la ligne
+    \item \texttt{| default "valeur"} : Valeur par défaut si vide
+    \item \texttt{.Release.Service} : Toujours "Helm" (identifie Helm)
+\end{itemize}
+\end{infobox}
+
+\newpage
+
+\subsubsection{Étape 3 : Packaging du common-chart}
+
+\begin{lstlisting}[language=bash, caption={Création du package}]
+cd ~/testlab
+helm package common-chart
+
+# Resultat : common-chart-0.1.tgz
+\end{lstlisting}
+
+\subsubsection{Étape 4 : Ajout comme dépendance}
+
+\begin{lstlisting}[caption={vs-code-chart/Chart.yaml (version 0.4)}]
+apiVersion: v2
+name: vs-code-chart
+description: A Helm chart for my application
+version: 0.4
+dependencies:
+  - name: storage-chart
+    version: 0.1
+    repository: "file://../storage-chart-0.1.tgz"
+  - name: common-chart
+    version: 0.1
+    repository: "file://../common-chart-0.1.tgz"
+\end{lstlisting}
+
+\begin{lstlisting}[language=bash, caption={Ajout du package}]
+# Copier le package dans charts/
+cp common-chart-0.1.tgz vs-code-chart/charts/
+\end{lstlisting}
+
+\subsubsection{Étape 5 : Utilisation dans les templates}
+
+\begin{lstlisting}[caption={templates/deployment.yaml avec labels communs}]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+{{ include "common-chart.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+    spec:
+      containers:
+      - name: {{ .Values.app.name }}
+        image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+        imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: {{ .Values.app.resources.requests.cpu }}
+            memory: {{ .Values.app.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.app.resources.limits.cpu }}
+            memory: {{ .Values.app.resources.limits.memory }}
+        volumeMounts:
+        - name: code-server-storage
+          mountPath: /home/coder
+      volumes:
+      - name: code-server-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.app.name }}-pvc
+\end{lstlisting}
+
+\newpage
+
+\begin{lstlisting}[caption={templates/service.yaml avec labels communs}]
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}
+  labels:
+{{ include "common-chart.labels" . | indent 4 }}
+spec:
+  type: {{ .Values.app.service.type }}
+  ports:
+  - port: {{ .Values.app.service.port }}
+    targetPort: 8080
+    nodePort: {{ .Values.app.service.nodePort }}
+  selector:
+    app: {{ .Values.app.name }}
+\end{lstlisting}
+
+\begin{infobox}{Fonctions de template}
+\begin{itemize}
+    \item \texttt{include "nom" .} : Appelle le helper et passe le contexte
+    \item \texttt{| indent 4} : Indente le résultat de 4 espaces
+    \item Le point \texttt{.} passe tout le contexte au helper
+    \item Sans le point, le helper n'aurait pas accès à \texttt{.Values}, \texttt{.Release}, etc.
+\end{itemize}
+\end{infobox}
+
+\subsubsection{Étape 6 : Déploiement de la version finale}
+
+\begin{lstlisting}[language=bash, caption={Packaging et déploiement}]
+# Packager la version finale
+helm package vs-code-chart
+
+# Resultat : vs-code-chart-0.4.tgz
+
+# Mettre a jour le deploiement
+helm upgrade vs-code-release vs-code-chart-0.4.tgz \
+  --namespace td3
+\end{lstlisting}
+
+\subsubsection{Étape 7 : Vérification des labels}
+
+\begin{lstlisting}[language=bash, caption={Tests de vérification}]
+# Verifier les labels du Deployment
+kubectl get deployment code-server -n td3 \
+  -o yaml | grep -A 10 "labels:"
+
+# Resultat attendu :
+# labels:
+#   app: code-server
+#   managed-by: Helm
+#   orga: IUT-C3
+#   res: R5-09
+#   version: vs-code-release
+
+# Verifier les labels du Service
+kubectl get service code-server -n td3 \
+  -o yaml | grep -A 10 "labels:"
+
+# Filtrer les ressources par label
+kubectl get all -n td3 -l orga=IUT-C3
+kubectl get all -n td3 -l res=R5-09
+\end{lstlisting}
+
+\newpage
+
+\begin{successbox}{Exercice 4 terminé !}
+Vous avez créé un système de labels réutilisable :
+\begin{itemize}
+    \item \textbf{common-chart v0.1} : Helper avec labels standardisés
+    \item \textbf{vs-code-chart v0.4} : Utilise les labels communs
+    \item Labels appliqués : orga, res, app, version, managed-by
+    \item Réutilisable pour tous vos projets R5.09
+\end{itemize}
+\end{successbox}
+
+\newpage
+
+\section{Tests et validation}
+
+\subsection{Commandes de vérification}
+
+\begin{lstlisting}[language=bash, caption={Tests complets du TD3}]
+# 1. Verifier les releases Helm
+helm list -n td3
+helm history vs-code-release -n td3
+
+# 2. Verifier les ressources Kubernetes
+kubectl get all,pvc -n td3
+
+# 3. Verifier les labels
+kubectl get deployment code-server -n td3 \
+  -o jsonpath='{.metadata.labels}' | jq
+
+# 4. Tester la connectivite
+kubectl run test-curl --rm -it --restart=Never \
+  --image=curlimages/curl \
+  -- curl -I http://code-server:8080
+
+# 5. Acceder depuis l'exterieur (port-forward)
+kubectl port-forward -n td3 svc/code-server 8080:8080 --address=0.0.0.0
+
+# Puis dans un navigateur : http://<IP-VM>:8080
+\end{lstlisting}
+
+\subsection{Résultats attendus}
+
+\begin{successbox}{État final du déploiement}
+\begin{itemize}
+    \item \textbf{Namespace} : td3
+    \item \textbf{Release} : vs-code-release (revision 3)
+    \item \textbf{Chart} : vs-code-chart-0.4
+    \item \textbf{Pod} : code-server (Running)
+    \item \textbf{Service} : NodePort 30080
+    \item \textbf{PVC} : 5Gi (Bound)
+    \item \textbf{Labels} : orga=IUT-C3, res=R5-09
+\end{itemize}
+\end{successbox}
+
+\newpage
+
+\section{Commandes Helm essentielles}
+
+\subsection{Gestion des Charts}
+
+\begin{lstlisting}[language=bash, caption={Commandes Chart}]
+# Creer un Chart depuis un template
+helm create mon-chart
+
+# Valider la syntaxe d'un Chart
+helm lint mon-chart
+
+# Afficher les templates sans deployer (dry-run)
+helm template mon-release mon-chart
+
+# Packager un Chart
+helm package mon-chart
+
+# Afficher les valeurs par defaut
+helm show values mon-chart
+\end{lstlisting}
+
+\subsection{Gestion des releases}
+
+\begin{lstlisting}[language=bash, caption={Commandes Release}]
+# Installer une release
+helm install mon-release mon-chart -n namespace
+
+# Mettre a jour une release
+helm upgrade mon-release mon-chart -n namespace
+
+# Installer ou mettre a jour (idempotent)
+helm upgrade --install mon-release mon-chart -n namespace
+
+# Lister les releases
+helm list -n namespace
+helm list --all-namespaces
+
+# Voir l'historique
+helm history mon-release -n namespace
+
+# Rollback vers une revision precedente
+helm rollback mon-release 2 -n namespace
+
+# Desinstaller une release
+helm uninstall mon-release -n namespace
+\end{lstlisting}
+
+\subsection{Debugging}
+
+\begin{lstlisting}[language=bash, caption={Commandes Debug}]
+# Voir les valeurs utilisees
+helm get values mon-release -n namespace
+
+# Voir les manifests deployes
+helm get manifest mon-release -n namespace
+
+# Voir toutes les infos de la release
+helm get all mon-release -n namespace
+
+# Debug avec mode dry-run et debug
+helm install mon-release mon-chart --dry-run --debug
+\end{lstlisting}
+
+\newpage
+
+\section{Bonnes pratiques}
+
+\subsection{Versioning}
+
+\begin{infobox}{Semantic Versioning (SemVer)}
+Format : \texttt{MAJOR.MINOR.PATCH}
+\begin{itemize}
+    \item \textbf{MAJOR} : Changements incompatibles (breaking changes)
+    \item \textbf{MINOR} : Nouvelles fonctionnalités rétro-compatibles
+    \item \textbf{PATCH} : Corrections de bugs rétro-compatibles
+\end{itemize}
+Exemples :
+\begin{itemize}
+    \item 0.1 → 0.2 : Nouvelle fonctionnalité
+    \item 0.2 → 0.2.1 : Correction de bug
+    \item 0.9 → 1.0 : Version stable
+    \item 1.0 → 2.0 : Breaking change
+\end{itemize}
+\end{infobox}
+
+\subsection{Organisation des Charts}
+
+\begin{warningbox}{Structure recommandée}
+\begin{verbatim}
+mon-chart/
+├── Chart.yaml              # Métadonnées
+├── values.yaml             # Valeurs par défaut
+├── charts/                 # Dépendances
+├── templates/              # Templates Kubernetes
+│   ├── _helpers.tpl        # Helpers réutilisables
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   └── NOTES.txt           # Message post-install
+├── .helmignore             # Fichiers à ignorer
+└── README.md               # Documentation
+\end{verbatim}
+\end{warningbox}
+
+\subsection{Nomenclature}
+
+\begin{itemize}
+    \item \textbf{Noms de Charts} : kebab-case (my-awesome-chart)
+    \item \textbf{Noms de releases} : kebab-case (my-release-name)
+    \item \textbf{Clés dans values.yaml} : camelCase (imagePullPolicy)
+    \item \textbf{Labels Kubernetes} : kebab-case (app.kubernetes.io/name)
+\end{itemize}
+
+\subsection{Sécurité}
+
+\begin{warningbox}{Points de vigilance}
+\begin{itemize}
+    \item Ne jamais inclure de secrets en dur dans les Charts
+    \item Utiliser des Secrets Kubernetes ou des outils dédiés (Sealed Secrets, Vault)
+    \item Définir des limites de ressources (limits/requests)
+    \item Utiliser des tags d'image précis (pas \texttt{latest})
+    \item Valider les Charts avec \texttt{helm lint}
+\end{itemize}
+\end{warningbox}
+
+\newpage
+
+\section{Aller plus loin}
+
+\subsection{Fonctionnalités avancées}
+
+\subsubsection{Hooks Helm}
+
+Les hooks permettent d'exécuter des actions à des moments précis :
+
+\begin{lstlisting}[caption={Exemple de hook pre-install}]
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-install-job
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: pre-install
+        image: busybox
+        command: ['sh', '-c', 'echo "Pre-install hook"']
+      restartPolicy: Never
+\end{lstlisting}
+
+Hooks disponibles : pre-install, post-install, pre-upgrade, post-upgrade, pre-delete, post-delete
+
+\subsubsection{Tests Helm}
+
+\begin{lstlisting}[caption={templates/tests/test-connection.yaml}]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-connection"
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  - name: wget
+    image: busybox
+    command: ['wget']
+    args: ['{{ .Values.app.name }}:{{ .Values.app.service.port }}']
+  restartPolicy: Never
+\end{lstlisting}
+
+Exécuter les tests : \texttt{helm test mon-release -n namespace}
+
+\subsubsection{Conditions et boucles}
+
+\begin{lstlisting}[caption={Exemple de condition}]
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.app.name }}
+spec:
+  rules:
+  - host: {{ .Values.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.app.name }}
+            port:
+              number: {{ .Values.app.service.port }}
+{{- end }}
+\end{lstlisting}
+
+\newpage
+
+\subsection{Repositories Helm}
+
+\subsubsection{Utiliser un repository public}
+
+\begin{lstlisting}[language=bash, caption={Ajout de repositories}]
+# Ajouter un repository
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+# Lister les repositories
+helm repo list
+
+# Mettre a jour les repositories
+helm repo update
+
+# Chercher un Chart
+helm search repo nginx
+
+# Installer depuis un repository
+helm install mon-nginx bitnami/nginx -n namespace
+\end{lstlisting}
+
+\subsubsection{Créer son propre repository}
+
+\begin{lstlisting}[language=bash, caption={Repository GitHub Pages}]
+# Creer un repository Git
+git init my-helm-repo
+cd my-helm-repo
+
+# Copier les Charts
+cp ../mon-chart-1.0.0.tgz .
+
+# Generer l'index
+helm repo index . --url https://example.com/helm-charts
+
+# Pousser sur GitHub
+git add .
+git commit -m "Add chart"
+git push origin main
+
+# Configurer GitHub Pages sur la branche main
+
+# Utiliser le repository
+helm repo add my-repo https://example.com/helm-charts
+helm repo update
+helm install my-release my-repo/mon-chart
+\end{lstlisting}
+
+\newpage
+
+\section{Troubleshooting}
+
+\subsection{Problèmes courants}
+
+\subsubsection{Erreur : Release already exists}
+
+\begin{lstlisting}[language=bash]
+# Symptome
+Error: cannot re-use a name that is still in use
+
+# Solution : Utiliser upgrade --install au lieu de install
+helm upgrade --install mon-release mon-chart -n namespace
+\end{lstlisting}
+
+\subsubsection{Erreur : Template rendering}
+
+\begin{lstlisting}[language=bash]
+# Symptome
+Error: template: ... executing ... at <.Values.xxx>:
+nil pointer evaluating interface {}.xxx
+
+# Solution : Verifier que la valeur existe dans values.yaml
+# Ou utiliser un default
+{{ .Values.xxx | default "valeur-par-defaut" }}
+\end{lstlisting}
+
+\subsubsection{Erreur : YAML indentation}
+
+\begin{lstlisting}[language=bash]
+# Symptome
+Error: YAML parse error ... mapping values are not allowed
+
+# Solution : Verifier l'indentation
+# Utiliser 'helm lint' pour detecter les erreurs
+helm lint mon-chart
+
+# Tester le rendu avec dry-run
+helm template mon-release mon-chart --debug
+\end{lstlisting}
+
+\subsubsection{Dépendances non trouvées}
+
+\begin{lstlisting}[language=bash]
+# Symptome
+Error: found in Chart.yaml, but missing in charts/ directory
+
+# Solution : Copier le package dans charts/
+cp mon-dependency-chart-0.1.tgz mon-chart/charts/
+
+# Ou utiliser helm dependency update (pour repositories distants)
+helm dependency update mon-chart
+\end{lstlisting}
+
+\newpage
+
+\section{Ressources complémentaires}
+
+\subsection{Documentation officielle}
+
+\begin{itemize}
+    \item \textbf{Helm} : \url{https://helm.sh/docs/}
+    \item \textbf{Chart Template Guide} : \url{https://helm.sh/docs/chart_template_guide/}
+    \item \textbf{Best Practices} : \url{https://helm.sh/docs/chart_best_practices/}
+    \item \textbf{Artifact Hub} : \url{https://artifacthub.io/} (recherche de Charts)
+\end{itemize}
+
+\subsection{Charts populaires}
+
+\begin{itemize}
+    \item \textbf{Bitnami} : nginx, postgresql, redis, wordpress, etc.
+    \item \textbf{Prometheus Stack} : monitoring complet
+    \item \textbf{Ingress NGINX} : contrôleur Ingress
+    \item \textbf{Cert-Manager} : gestion des certificats TLS
+    \item \textbf{ArgoCD} : GitOps pour Kubernetes
+\end{itemize}
+
+\subsection{Outils complémentaires}
+
+\begin{itemize}
+    \item \textbf{Helmfile} : Déclarer plusieurs releases Helm en YAML
+    \item \textbf{Helm Diff} : Voir les différences avant upgrade
+    \item \textbf{Helm Secrets} : Chiffrer les values.yaml avec SOPS
+    \item \textbf{Chart Testing (ct)} : Tester et valider les Charts
+\end{itemize}
+
+\newpage
+
+\section{Conclusion}
+
+\subsection{Récapitulatif}
+
+Vous avez appris à :
+
+\begin{itemize}
+    \item ✅ Créer un Chart Helm depuis zéro
+    \item ✅ Packager et déployer des applications Kubernetes
+    \item ✅ Gérer des dépendances entre Charts
+    \item ✅ Variabiliser les configurations avec values.yaml
+    \item ✅ Créer des templates réutilisables avec helpers
+    \item ✅ Appliquer des labels standardisés
+    \item ✅ Tester et valider vos déploiements
+\end{itemize}
+
+\subsection{Architecture finale}
+
+\begin{successbox}{TD3 complété !}
+Votre architecture modulaire :
+\begin{itemize}
+    \item \textbf{vs-code-chart v0.4} : Application principale
+    \begin{itemize}
+        \item Deployment variabilisé
+        \item Service NodePort configurable
+        \item Resources limits/requests
+        \item Labels standardisés
+    \end{itemize}
+    \item \textbf{storage-chart v0.1} : Gestion du stockage
+    \begin{itemize}
+        \item PVC réutilisable
+        \item Taille configurable
+    \end{itemize}
+    \item \textbf{common-chart v0.1} : Labels communs
+    \begin{itemize}
+        \item Helper pour labels standardisés
+        \item Réutilisable dans tous vos projets
+    \end{itemize}
+\end{itemize}
+\end{successbox}
+
+\subsection{Compétences acquises}
+
+Ces compétences sont essentielles pour :
+\begin{itemize}
+    \item Déployer des applications en production
+    \item Travailler dans une équipe DevOps
+    \item Maintenir des infrastructures Kubernetes
+    \item Créer des Charts réutilisables pour votre entreprise
+    \item Contribuer à des projets open-source
+\end{itemize}
+
+\begin{center}
+\Large
+\textbf{Félicitations !}\\
+\vspace{0.5cm}
+Vous maîtrisez maintenant les fondamentaux de Helm\\
+et êtes prêts pour des déploiements Kubernetes professionnels.
+\end{center}
+
+\end{document}
