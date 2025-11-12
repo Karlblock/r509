@@ -8,6 +8,7 @@ exemples/
 docker-minikube/
 cours/cesi-inf103
 GOK8S/
+outils/
 
 # Large binary files
 *.tar
