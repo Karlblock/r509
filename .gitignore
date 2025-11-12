@@ -6,6 +6,8 @@
 archives/
 exemples/
 docker-minikube/
+cours/cesi-inf103
+GOK8S/
 
 # Large binary files
 *.tar
