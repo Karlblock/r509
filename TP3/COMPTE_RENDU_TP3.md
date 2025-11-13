@@ -1,8 +1,8 @@
 # Compte-Rendu TP3 - Kubernetes Autoscaling (HPA)
 
-**Date :** 2025-11-11
-**Étudiant :** [Votre Nom]
-**Objectif :** Comprendre et mettre en œuvre l'autoscaling horizontal (HPA) dans Kubernetes
+* **Date :** 2025-11-11
+* **Étudiant :** [Votre Nom]
+* **Objectif :** Comprendre et mettre en œuvre l'autoscaling horizontal (HPA) dans Kubernetes
 
 ---
 
@@ -477,13 +477,13 @@ spec:
 
 ### Objectifs atteints
 
-✅ **Installation et configuration** d'un cluster Kubernetes avec metrics-server
-✅ **Création** d'une application Express de test avec endpoints CPU/mémoire
-✅ **Déploiement** avec Deployment, Service et Ingress
-✅ **Configuration** d'un HPA avec métriques CPU et mémoire
-✅ **Tests réussis** de scale-up (1→3 réplicas en 2 minutes)
-✅ **Observation** du scale-down (3→2 réplicas après 5 minutes)
-✅ **Compréhension** des mécanismes d'autoscaling
+- ✅ **Installation et configuration** d'un cluster Kubernetes avec metrics-server
+- ✅ **Création** d'une application Express de test avec endpoints CPU/mémoire
+- ✅ **Déploiement** avec Deployment, Service et Ingress
+- ✅ **Configuration** d'un HPA avec métriques CPU et mémoire
+- ✅ **Tests réussis** de scale-up (1→3 réplicas en 2 minutes)
+- ✅ **Observation** du scale-down (3→2 réplicas après 5 minutes)
+- ✅ **Compréhension** des mécanismes d'autoscaling
 
 ### Points clés retenus
 
@@ -529,8 +529,7 @@ kubectl top pod <pod-name>
 - [Documentation Kubernetes HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 - [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 - [Kind - Local Kubernetes](https://kind.sigs.k8s.io/)
-- Support de cours TP03 - Etienne
 
 ---
 
-**Fin du compte-rendu**
+

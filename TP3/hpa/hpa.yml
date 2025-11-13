@@ -18,9 +18,10 @@ spec:
         value: 1
         periodSeconds: 60
     scaleDown:
+      stabilizationWindowSeconds: 60  # Réduit de 300s (défaut) à 60s pour tests
       policies:
       - type: Percent
-        value: 10
+        value: 50  # Scale down de 50% au lieu de 10% pour aller plus vite
         periodSeconds: 60
   metrics:
   - type: Resource

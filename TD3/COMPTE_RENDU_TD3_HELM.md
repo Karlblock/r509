@@ -48,12 +48,12 @@ mon-chart/
 
 ### 1.4 Avantages de Helm
 
-✅ **Reproductibilité** : Déploiement identique sur différents environnements
-✅ **Gestion de versions** : Suivi de l'évolution des déploiements
-✅ **Paramétrage** : Configuration flexible via variables
-✅ **Modularité** : Réutilisation de charts via dépendances
-✅ **IaC** : Infrastructure as Code
-✅ **CI/CD** : Intégration dans les pipelines d'automatisation
+-  **Reproductibilité** : Déploiement identique sur différents environnements
+-  **Gestion de versions** : Suivi de l'évolution des déploiements
+-  **Paramétrage** : Configuration flexible via variables
+-  **Modularité** : Réutilisation de charts via dépendances
+-  **IaC** : Infrastructure as Code
+-  **CI/CD** : Intégration dans les pipelines d'automatisation
 
 ---
 

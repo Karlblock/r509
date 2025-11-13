@@ -1,0 +1,4 @@
+apiVersion: v2
+name: vs-code-chart
+description: A Helm chart for code-server application
+version: 0.1
