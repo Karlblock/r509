@@ -1,4 +1,4 @@
-# Script pour installer ingress-nginx avec nodeSelector intégré
+vs# Script pour installer ingress-nginx avec nodeSelector intégré
 
 # Télécharger le manifeste
 curl -o /tmp/ingress-nginx.yaml https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml

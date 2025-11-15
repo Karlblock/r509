@@ -40,6 +40,14 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
 ```
 
+vérifier si il est sur le controle plane : 
+```bash
+kubectl get pod -n ingress-nginx -o wide 
+```
+patcher le selector sinon : 
+```bash
+kubectl patch deployment -n ingress-nginx ingress-nginx-controller \ -p '{"spec":{"template":{"spec":{"nodeSelector":{"ingress-ready":"true"}}}}}'
+```
 ### 1.3 Installation et configuration de Metrics-Server
 
 Le metrics-server est essentiel pour le HPA car il collecte les métriques CPU et mémoire des pods.
