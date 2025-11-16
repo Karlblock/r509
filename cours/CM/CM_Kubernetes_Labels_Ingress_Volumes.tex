@@ -1,0 +1,1177 @@
+\documentclass[a4paper,11pt]{article}
+
+% ================================
+% PACKAGES
+% ================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, backgrounds}
+
+% ================================
+% COULEURS PERSONNALISÉES
+% ================================
+\definecolor{iutblue}{RGB}{41,128,185}
+\definecolor{iutcyan}{RGB}{52,152,219}
+\definecolor{iutgreen}{RGB}{39,174,96}
+\definecolor{iutorange}{RGB}{230,126,34}
+\definecolor{iutgray}{RGB}{149,165,166}
+\definecolor{codebg}{RGB}{248,248,248}
+
+% ================================
+% GÉOMÉTRIE DE LA PAGE
+% ================================
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=3cm,
+    bottom=3cm,
+    headheight=15pt
+}
+
+% ================================
+% EN-TÊTES ET PIEDS DE PAGE
+% ================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{R5.09 - R\&T}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% ================================
+% STYLE DES SECTIONS
+% ================================
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{iutblue}}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{iutcyan}}
+{\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+{\normalfont\normalsize\bfseries\color{iutgreen}}
+{\thesubsubsection}{1em}{}
+
+% ================================
+% BOÎTES COLORÉES
+% ================================
+
+\newtcolorbox{objectifs}{
+    colback=iutgreen!10,
+    colframe=iutgreen,
+    fonttitle=\bfseries,
+    title=Objectifs pédagogiques,
+    breakable,
+    enhanced jigsaw
+}
+
+\newtcolorbox{avertissement}{
+    colback=iutorange!10,
+    colframe=iutorange,
+    fonttitle=\bfseries,
+    title=Point d'attention,
+    breakable,
+    enhanced jigsaw
+}
+
+\newtcolorbox{exemple}{
+    colback=iutcyan!10,
+    colframe=iutcyan,
+    fonttitle=\bfseries,
+    title=Exemple pratique,
+    breakable,
+    enhanced jigsaw
+}
+
+\newtcolorbox{reference}{
+    colback=iutblue!10,
+    colframe=iutblue,
+    fonttitle=\bfseries,
+    title=Référence,
+    breakable,
+    enhanced jigsaw
+}
+
+\newtcolorbox{important}{
+    colback=iutgray!10,
+    colframe=iutgray,
+    fonttitle=\bfseries,
+    title=Point important,
+    breakable,
+    enhanced jigsaw
+}
+
+\newtcolorbox{demo}{
+    colback=iutgreen!5,
+    colframe=iutgreen!80,
+    fonttitle=\bfseries,
+    title=Démonstration,
+    breakable,
+    enhanced jigsaw
+}
+
+% ================================
+% CONFIGURATION DES LISTINGS
+% ================================
+\lstdefinestyle{yaml}{
+    language=bash,
+    basicstyle=\ttfamily\small,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    framesep=5pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    numbers=left,
+    numberstyle=\tiny\color{iutgray},
+    keywordstyle=\color{iutblue}\bfseries,
+    commentstyle=\color{iutgreen}\itshape,
+    stringstyle=\color{iutorange},
+    showstringspaces=false,
+    tabsize=2,
+    captionpos=b
+}
+
+\lstset{style=yaml}
+
+% ================================
+% HYPERLINKS
+% ================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=iutblue,
+    filecolor=iutblue,
+    urlcolor=iutcyan,
+    citecolor=iutgreen,
+    pdfborder={0 0 0}
+}
+
+% ================================
+% VARIABLES DU COURS
+% ================================
+\newcommand{\titrecours}{Kubernetes}
+\newcommand{\soustitre}{Labels, Annotations, Ingress et Volumes}
+\newcommand{\categorie}{Synthèse des concepts fondamentaux}
+
+% ================================
+% PAGE DE TITRE PERSONNALISÉE
+% ================================
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{3cm}
+
+    % Titre principal
+    {\Huge\bfseries\color{iutblue}\titrecours\par}
+    \vspace{0.5cm}
+
+    % Sous-titre
+    {\Large\color{iutcyan}\soustitre\par}
+    {\large\color{iutgreen}\categorie\par}
+
+    \vspace{2cm}
+
+    % Ligne horizontale
+    \textcolor{iutblue}{\rule{\textwidth}{2pt}}
+
+    \vspace{2cm}
+
+    % Informations du cours
+    {\large Formation : BUT Informatique - Semestre 5\par}
+    \vspace{0.3cm}
+    {\large\textbf{Module :} R5.09 - Virtualisation Avancée\par}
+
+    \vfill
+
+    % Date
+    {\large 16 novembre 2025\par}
+\end{titlepage}
+
+\setcounter{page}{1}
+
+% TABLE DES MATIÈRES
+\tableofcontents
+\newpage
+
+% ================================
+% CONTENU DU COURS
+% ================================
+
+\section{Introduction}
+
+Ce cours magistral constitue une synthèse des concepts fondamentaux de Kubernetes que vous devez maîtriser parfaitement. Nous allons consolider vos connaissances acquises lors des TD/TP en clarifiant trois axes essentiels :
+
+\begin{enumerate}
+    \item \textbf{Labels et Annotations} : Comprendre la différence et leur utilisation stratégique
+    \item \textbf{Ingress, Services et Pods} : Maîtriser le flux complet du trafic réseau
+    \item \textbf{Volumes} : Distinguer persistance et non-persistance des données
+\end{enumerate}
+
+\begin{objectifs}
+À l'issue de ce CM, vous serez capables de :
+\begin{itemize}
+    \item Distinguer labels et annotations et utiliser une nomenclature cohérente
+    \item Expliquer le rôle de chaque composant du flux réseau (Ingress Controller, Ingress, Service, Pod)
+    \item Différencier les volumes éphémères des volumes persistants (PV/PVC)
+    \item Implémenter correctement ces concepts dans vos déploiements Kubernetes
+\end{itemize}
+\end{objectifs}
+
+\newpage
+
+\section{Labels et Annotations}
+
+\subsection{Présentation générale}
+
+Les labels et annotations sont deux mécanismes de métadonnées dans Kubernetes, mais ils ont des rôles fondamentalement différents.
+
+\begin{important}
+\textbf{Règle d'or :}
+\begin{itemize}
+    \item \textbf{Labels} $\rightarrow$ Sélection et comportement Kubernetes
+    \item \textbf{Annotations} $\rightarrow$ Métadonnées techniques sans impact sur la sélection
+\end{itemize}
+\end{important}
+
+\subsection{Les Labels (Étiquettes)}
+
+\subsubsection{Définition et caractéristiques}
+
+Les labels sont des paires clé-valeur attachées aux objets Kubernetes (pods, services, deployments...) qui servent à :
+
+\begin{itemize}
+    \item \textbf{Sélectionner} des ensembles d'objets via les selectors
+    \item \textbf{Organiser} et regrouper les ressources
+    \item \textbf{Influencer} le comportement des contrôleurs Kubernetes
+\end{itemize}
+
+\textbf{Contraintes techniques :}
+\begin{itemize}
+    \item Clé : max 63 caractères (préfixe optionnel de 253 caractères)
+    \item Valeur : max 63 caractères
+    \item Format : caractères alphanumériques, tirets, underscores, points
+\end{itemize}
+
+\subsubsection{Exemples pratiques}
+
+\begin{lstlisting}[caption=Définition de labels dans un Deployment]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  labels:
+    app: webapp
+    tier: frontend
+    environment: production
+    version: v1.2.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: webapp
+        tier: frontend
+        environment: production
+\end{lstlisting}
+
+\begin{exemple}
+\textbf{Utilisation des selectors :}
+
+Les Services utilisent les labels pour identifier leurs pods cibles :
+
+\begin{lstlisting}
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  selector:
+    app: webapp        # Sélectionne tous les pods avec ce label
+    tier: frontend     # ET ce label
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+\end{lstlisting}
+
+Résultat : Le service route le trafic vers tous les pods ayant \texttt{app: webapp} \textbf{ET} \texttt{tier: frontend}.
+\end{exemple}
+
+\subsubsection{Nomenclature recommandée}
+
+\begin{avertissement}
+Une nomenclature incohérente peut entraîner :
+\begin{itemize}
+    \item Des \textbf{collisions} entre sélecteurs
+    \item Des \textbf{règles ambiguës} dans les Network Policies
+    \item Des difficultés de \textbf{maintenance} et debugging
+\end{itemize}
+\end{avertissement}
+
+\textbf{Labels recommandés (Kubernetes standard) :}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Label} & \textbf{Exemple} & \textbf{Description} \\ \hline
+\texttt{app.kubernetes.io/name} & \texttt{mysql} & Nom de l'application \\ \hline
+\texttt{app.kubernetes.io/instance} & \texttt{mysql-prod} & Instance spécifique \\ \hline
+\texttt{app.kubernetes.io/version} & \texttt{5.7.21} & Version de l'application \\ \hline
+\texttt{app.kubernetes.io/component} & \texttt{database} & Rôle dans l'architecture \\ \hline
+\texttt{app.kubernetes.io/part-of} & \texttt{wordpress} & Système parent \\ \hline
+\texttt{app.kubernetes.io/managed-by} & \texttt{helm} & Outil de gestion \\ \hline
+\end{tabular}
+\caption{Labels recommandés par Kubernetes}
+\end{table}
+
+\subsection{Les Annotations}
+
+\subsubsection{Définition et usage}
+
+Les annotations sont des métadonnées qui \textbf{ne servent PAS} à la sélection. Elles sont utilisées pour :
+
+\begin{itemize}
+    \item Stocker des informations techniques
+    \item Configurer des outils externes (monitoring, CI/CD)
+    \item Documenter les ressources
+    \item Transmettre des données aux contrôleurs
+\end{itemize}
+
+\textbf{Différences avec les labels :}
+\begin{itemize}
+    \item Aucune limite de taille stricte
+    \item Peuvent contenir des données structurées (JSON, YAML)
+    \item \textbf{Ne participent PAS} à la sélection d'objets
+\end{itemize}
+
+\subsubsection{Exemples d'utilisation}
+
+\begin{lstlisting}[caption=Annotations dans un Ingress]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-ingress
+  annotations:
+    # Configuration pour l'Ingress Controller
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+
+    # Métadonnées pour les outils externes
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+
+    # Documentation
+    description: "Ingress pour l'application web principale"
+    maintainer: "equipe-devops@iut.fr"
+spec:
+  rules:
+    - host: webapp.iut.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-service
+                port:
+                  number: 80
+\end{lstlisting}
+
+\begin{important}
+\textbf{Annotations critiques pour Ingress-nginx :}
+\begin{itemize}
+    \item \texttt{nginx.ingress.kubernetes.io/rewrite-target} : Réécriture d'URL
+    \item \texttt{nginx.ingress.kubernetes.io/ssl-redirect} : Redirection HTTPS
+    \item \texttt{nginx.ingress.kubernetes.io/auth-type} : Authentification basique
+    \item \texttt{nginx.ingress.kubernetes.io/rate-limit} : Limitation de débit
+\end{itemize}
+\end{important}
+
+\subsection{Tableau récapitulatif}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|p{3cm}|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Critère} & \textbf{Labels} & \textbf{Annotations} \\ \hline
+\textbf{Usage principal} & Sélection et organisation & Métadonnées techniques \\ \hline
+\textbf{Sélection possible ?} & \textbf{OUI} (via selectors) & \textbf{NON} \\ \hline
+\textbf{Impact sur Kubernetes} & Influence le comportement & Aucun impact direct \\ \hline
+\textbf{Taille} & Limitée (63 caractères) & Flexible \\ \hline
+\textbf{Exemple} & \texttt{app: frontend} & \texttt{description: "Service web"} \\ \hline
+\end{tabular}
+\caption{Labels vs Annotations}
+\end{table}
+
+\newpage
+
+\section{Ingress, Services et Pods - Synthèse critique}
+
+\subsection{Vue d'ensemble du flux réseau}
+
+\begin{important}
+\textbf{Point clé à retenir :} Le flux de trafic dans Kubernetes suit toujours cette chaîne :
+
+\[
+\text{Client externe} \rightarrow \text{Ingress Controller} \rightarrow \text{Ingress (règles)} \rightarrow \text{Service} \rightarrow \text{Pods}
+\]
+\end{important}
+
+\subsection{Distinction fondamentale : Ingress vs Ingress Controller}
+
+\subsubsection{Objet Ingress (règles de routage)}
+
+L'Ingress est une \textbf{ressource Kubernetes} qui décrit les règles de routage HTTP/HTTPS :
+
+\begin{itemize}
+    \item Définit les \textbf{règles} (host, path, backend)
+    \item Est un simple fichier YAML déclaratif
+    \item \textbf{Ne fait rien seul} sans Ingress Controller
+\end{itemize}
+
+\begin{lstlisting}[caption=Exemple d'objet Ingress]
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  rules:
+    - host: app.iut.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 8080
+          - path: /web
+            pathType: Prefix
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 80
+\end{lstlisting}
+
+\subsubsection{Ingress Controller (implémentation)}
+
+L'Ingress Controller est un \textbf{composant logiciel} (pod) qui implémente réellement les règles :
+
+\begin{itemize}
+    \item C'est un \textbf{reverse proxy} (nginx, Traefik, HAProxy, etc.)
+    \item Surveille les objets Ingress et configure dynamiquement le proxy
+    \item Gère le trafic entrant et applique les règles de routage
+\end{itemize}
+
+\textbf{Contrôleurs populaires :}
+\begin{itemize}
+    \item \texttt{ingress-nginx} : Basé sur Nginx (le plus utilisé)
+    \item \texttt{Traefik} : Moderne, avec tableau de bord
+    \item \texttt{HAProxy Ingress} : Performant pour la charge élevée
+    \item \texttt{Contour} : Basé sur Envoy proxy
+\end{itemize}
+
+\begin{avertissement}
+\textbf{Erreur fréquente des étudiants :}
+
+Créer un objet Ingress sans avoir déployé d'Ingress Controller ne sert à rien ! Les règles existent mais ne sont pas appliquées.
+
+\textbf{Vérification :}
+\begin{lstlisting}[language=bash]
+kubectl get pods -n ingress-nginx
+# Doit afficher un pod ingress-nginx-controller
+\end{lstlisting}
+\end{avertissement}
+
+\subsection{Le rôle des Services}
+
+Les Services sont l'abstraction qui permet de cibler un ensemble de pods via des labels :
+
+\begin{enumerate}
+    \item \textbf{ClusterIP} (par défaut) : IP interne au cluster
+    \item \textbf{NodePort} : Expose un port sur chaque nœud
+    \item \textbf{LoadBalancer} : Provisionne un load balancer externe (cloud)
+\end{enumerate}
+
+\begin{lstlisting}[caption=Service ciblant des pods via labels]
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+    tier: backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 3000
+\end{lstlisting}
+
+\textbf{Fonctionnement :}
+\begin{itemize}
+    \item Le Service sélectionne tous les pods avec \texttt{app: api} et \texttt{tier: backend}
+    \item Kubernetes crée des \textbf{Endpoints} (liste d'IPs de pods)
+    \item Le trafic est réparti entre les pods via load balancing (round-robin)
+\end{itemize}
+
+\subsection{Flux complet illustré}
+
+\begin{demo}
+\textbf{Scénario :} Un utilisateur accède à \texttt{http://app.iut.local/api/users}
+
+\begin{enumerate}
+    \item \textbf{Requête DNS} : L'utilisateur résout \texttt{app.iut.local} vers l'IP du cluster
+    \item \textbf{Ingress Controller} : Reçoit la requête HTTP
+    \item \textbf{Ingress (règles)} : Le contrôleur consulte l'objet Ingress et trouve la règle :
+    \begin{itemize}
+        \item Host : \texttt{app.iut.local}
+        \item Path : \texttt{/api}
+        \item Backend : \texttt{api-service:8080}
+    \end{itemize}
+    \item \textbf{Service} : Le contrôleur forward la requête au Service \texttt{api-service}
+    \item \textbf{Endpoints} : Le Service consulte ses Endpoints (liste des IPs de pods)
+    \item \textbf{Pod} : Le trafic est routé vers un pod de l'API (load balancing)
+    \item \textbf{Réponse} : Le pod traite la requête et renvoie la réponse via le même chemin
+\end{enumerate}
+\end{demo}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2cm,
+    every node/.style={font=\small},
+    box/.style={rectangle, draw, fill=blue!10, text width=3cm, text centered, minimum height=1cm},
+    arrow/.style={->, >=stealth, thick}
+]
+
+% Nodes
+\node[box, fill=red!20] (client) {Client\\(Navigateur)};
+\node[box, fill=orange!20, right=of client] (ingress-ctrl) {Ingress\\Controller\\(nginx pod)};
+\node[box, fill=cyan!20, below=of ingress-ctrl] (ingress-obj) {Ingress\\(règles)};
+\node[box, fill=green!20, right=of ingress-ctrl] (service) {Service};
+\node[box, fill=blue!20, right=of service] (pod1) {Pod 1};
+\node[box, fill=blue!20, above=0.5cm of pod1] (pod2) {Pod 2};
+\node[box, fill=blue!20, below=0.5cm of pod1] (pod3) {Pod 3};
+
+% Arrows
+\draw[arrow] (client) -- node[above] {HTTP} (ingress-ctrl);
+\draw[arrow, dashed] (ingress-ctrl) -- node[left] {lit} (ingress-obj);
+\draw[arrow] (ingress-ctrl) -- node[above] {forward} (service);
+\draw[arrow] (service) -- (pod1);
+\draw[arrow] (service) -- (pod2);
+\draw[arrow] (service) -- (pod3);
+
+\end{tikzpicture}
+\end{center}
+
+\subsection{Gestion du trafic sortant (Egress)}
+
+\subsubsection{NetworkPolicy pour Egress}
+
+Les \textbf{NetworkPolicy} permettent de contrôler le trafic sortant (Egress) des pods :
+
+\begin{lstlisting}[caption=NetworkPolicy avec règles Egress]
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    # Autoriser uniquement le trafic vers le backend
+    - to:
+      - podSelector:
+          matchLabels:
+            app: backend
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Autoriser DNS
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+\end{lstlisting}
+
+\textbf{Cas d'usage :}
+\begin{itemize}
+    \item Créer une \textbf{whitelist} interne (seuls certains services peuvent être contactés)
+    \item Bloquer l'accès à Internet depuis les pods
+    \item Implémenter une micro-segmentation réseau
+\end{itemize}
+
+\begin{avertissement}
+Les NetworkPolicy nécessitent un \textbf{CNI compatible} (Calico, Cilium, Weave Net). Le CNI par défaut de Kind/Minikube ne supporte pas toujours les NetworkPolicy.
+\end{avertissement}
+
+\subsection{Solutions avancées (hors scope BUT)}
+
+\subsubsection{Service Mesh (Istio, Linkerd)}
+
+Les Service Mesh ajoutent des fonctionnalités avancées :
+\begin{itemize}
+    \item Chiffrement mTLS automatique entre services
+    \item Telemetry et tracing distribué
+    \item Traffic management (retry, timeout, circuit breaker)
+    \item Canary deployments et A/B testing
+\end{itemize}
+
+\textbf{Complexité :} Ces solutions dépassent le niveau BUT mais sont utilisées en production dans les grandes entreprises.
+
+\newpage
+
+\section{Volumes - Persistance des Données}
+
+\subsection{Introduction}
+
+Les volumes dans Kubernetes résolvent le problème de la \textbf{persistance des données} au-delà du cycle de vie d'un pod.
+
+\begin{important}
+\textbf{Concept fondamental :}
+
+Les conteneurs sont \textbf{éphémères} : quand un pod est détruit, toutes ses données sont perdues. Les volumes permettent de conserver les données.
+\end{important}
+
+\subsection{Déclaration vs Montage}
+
+\subsubsection{Deux étapes distinctes}
+
+\begin{enumerate}
+    \item \textbf{Déclaration du volume} dans \texttt{spec.volumes} (au niveau du pod)
+    \item \textbf{Montage du volume} dans \texttt{volumeMounts} (au niveau du conteneur)
+\end{enumerate}
+
+\begin{exemple}
+\begin{lstlisting}[caption=Déclaration et montage d'un volume]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp-pod
+spec:
+  # 1. DÉCLARATION du volume au niveau du pod
+  volumes:
+    - name: config-volume
+      configMap:
+        name: app-config
+    - name: data-volume
+      emptyDir: {}
+
+  containers:
+    - name: webapp
+      image: nginx:latest
+      # 2. MONTAGE du volume dans le conteneur
+      volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+          readOnly: true
+        - name: data-volume
+          mountPath: /var/data
+\end{lstlisting}
+\end{exemple}
+
+\subsection{Volumes non persistants (éphémères)}
+
+\subsubsection{EmptyDir}
+
+\textbf{Caractéristiques :}
+\begin{itemize}
+    \item Créé lorsque le pod est assigné à un nœud
+    \item Supprimé lorsque le pod est détruit
+    \item Partagé entre tous les conteneurs du pod
+\end{itemize}
+
+\textbf{Cas d'usage :}
+\begin{itemize}
+    \item Cache temporaire
+    \item Fichiers de travail entre conteneurs
+    \item Checkpoint pour longues computations
+\end{itemize}
+
+\begin{lstlisting}[caption=EmptyDir pour cache partagé]
+spec:
+  volumes:
+    - name: cache-volume
+      emptyDir:
+        sizeLimit: 1Gi
+  containers:
+    - name: app
+      volumeMounts:
+        - name: cache-volume
+          mountPath: /app/cache
+\end{lstlisting}
+
+\subsubsection{ConfigMap et Secret (lecture seule)}
+
+\textbf{Rôle :}
+\begin{itemize}
+    \item \textbf{ConfigMap} : Configuration non sensible (fichiers de config, variables)
+    \item \textbf{Secret} : Données sensibles (mots de passe, certificats, tokens)
+\end{itemize}
+
+\begin{lstlisting}[caption=ConfigMap monté en volume]
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+            root /usr/share/nginx/html;
+        }
+    }
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  volumes:
+    - name: config
+      configMap:
+        name: nginx-config
+  containers:
+    - name: nginx
+      image: nginx:latest
+      volumeMounts:
+        - name: config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+\end{lstlisting}
+
+\begin{important}
+Les ConfigMap et Secret sont montés en \textbf{lecture seule} par défaut. Ils sont liés au cycle de vie du pod (éphémères).
+\end{important}
+
+\subsection{Volumes persistants (PV/PVC)}
+
+\subsubsection{Architecture PV/PVC}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2.5cm,
+    box/.style={rectangle, draw, fill=blue!10, text width=3.5cm, text centered, minimum height=1.2cm},
+    arrow/.style={->, >=stealth, thick}
+]
+
+\node[box, fill=orange!20] (admin) {Administrateur};
+\node[box, fill=cyan!20, below=of admin] (pv) {PersistentVolume (PV)\\Stockage réel};
+\node[box, fill=green!20, right=3cm of pv] (pvc) {PersistentVolumeClaim (PVC)\\Demande de stockage};
+\node[box, fill=blue!20, above=of pvc] (dev) {Développeur};
+\node[box, fill=red!20, below=of pvc] (pod) {Pod};
+
+\draw[arrow] (admin) -- node[left] {provisionne} (pv);
+\draw[arrow] (dev) -- node[right] {crée} (pvc);
+\draw[arrow] (pvc) -- node[above] {binding} (pv);
+\draw[arrow] (pod) -- node[right] {utilise} (pvc);
+
+\end{tikzpicture}
+\end{center}
+
+\textbf{Séparation des responsabilités :}
+\begin{itemize}
+    \item \textbf{Administrateur} : Provisionne les PV (stockage réel)
+    \item \textbf{Développeur} : Crée des PVC (demandes de stockage)
+    \item Kubernetes fait le \textbf{binding} automatique entre PVC et PV
+\end{itemize}
+
+\subsubsection{PersistentVolume (PV)}
+
+\begin{lstlisting}[caption=Exemple de PersistentVolume]
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-database
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data
+\end{lstlisting}
+
+\textbf{Access Modes :}
+\begin{itemize}
+    \item \texttt{ReadWriteOnce (RWO)} : Lecture/écriture par un seul nœud
+    \item \texttt{ReadOnlyMany (ROX)} : Lecture seule par plusieurs nœuds
+    \item \texttt{ReadWriteMany (RWX)} : Lecture/écriture par plusieurs nœuds
+\end{itemize}
+
+\textbf{Reclaim Policy :}
+\begin{itemize}
+    \item \texttt{Retain} : Les données sont conservées après suppression du PVC
+    \item \texttt{Delete} : Le volume est supprimé automatiquement
+    \item \texttt{Recycle} : Les données sont effacées mais le volume est recyclé (déprécié)
+\end{itemize}
+
+\subsubsection{PersistentVolumeClaim (PVC)}
+
+\begin{lstlisting}[caption=PersistentVolumeClaim]
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: manual
+\end{lstlisting}
+
+\subsubsection{Utilisation dans un Pod}
+
+\begin{lstlisting}[caption=Pod utilisant un PVC]
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres-pod
+spec:
+  volumes:
+    - name: postgres-storage
+      persistentVolumeClaim:
+        claimName: pvc-database
+  containers:
+    - name: postgres
+      image: postgres:14
+      volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      env:
+        - name: POSTGRES_PASSWORD
+          value: "secret"
+\end{lstlisting}
+
+\begin{important}
+\textbf{Persistance garantie :}
+
+Même si le pod \texttt{postgres-pod} est détruit et recréé, les données dans \texttt{/var/lib/postgresql/data} sont conservées car elles résident sur le PV.
+\end{important}
+
+\subsection{Tableau comparatif}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{2.5cm}|p{4cm}|p{4cm}|p{3cm}|}
+\hline
+\textbf{Type} & \textbf{Cycle de vie} & \textbf{Cas d'usage} & \textbf{Persistance} \\ \hline
+\texttt{emptyDir} & Lié au pod & Cache, fichiers temporaires & Non \\ \hline
+\texttt{configMap} & Lié au ConfigMap & Configuration applicative & Non \\ \hline
+\texttt{secret} & Lié au Secret & Credentials, certificats & Non \\ \hline
+\texttt{hostPath} & Lié au nœud & Tests locaux (Kind/Minikube) & Oui (sur le nœud) \\ \hline
+\texttt{PV/PVC} & Découplé du pod & Bases de données, fichiers & \textbf{Oui} \\ \hline
+\end{tabular}
+\caption{Types de volumes et persistance}
+\end{table}
+
+\subsection{Scénarios stateful vs stateless}
+
+\begin{exemple}
+\textbf{Application stateless (frontend web) :}
+\begin{itemize}
+    \item Utilise \texttt{ConfigMap} pour la configuration Nginx
+    \item Utilise \texttt{emptyDir} pour des logs temporaires
+    \item Aucun PVC nécessaire
+\end{itemize}
+
+\textbf{Application stateful (base de données) :}
+\begin{itemize}
+    \item Utilise un \texttt{PVC} pour les données (\texttt{/var/lib/postgresql/data})
+    \item Utilise \texttt{Secret} pour le mot de passe root
+    \item StatefulSet pour garantir l'identité stable
+\end{itemize}
+\end{exemple}
+
+\newpage
+
+\section{Démonstration pratique}
+
+\subsection{Application front + back pour illustration}
+
+Dans le chapitre 3 du dépôt GitLab que vous avez, vous trouverez une application complète \textbf{frontend + backend} qui illustre :
+
+\begin{enumerate}
+    \item \textbf{Load balancing} : Plusieurs réplicas du backend distribuent la charge
+    \item \textbf{High Availability (HA)} : Si un pod tombe, le Service redirige le trafic
+    \item \textbf{Health checks} : Liveness et Readiness probes pour la résilience
+    \item \textbf{Ingress} : Routage basé sur le path (\texttt{/api} → backend, \texttt{/} → frontend)
+\end{enumerate}
+
+\begin{demo}
+\textbf{Étapes de la démo live :}
+
+\begin{enumerate}
+    \item Déployer le backend avec 3 réplicas
+    \item Déployer le frontend avec 2 réplicas
+    \item Créer les Services ClusterIP pour chaque composant
+    \item Configurer un Ingress pour router le trafic
+    \item Tester le load balancing en tuant des pods
+    \item Observer la récupération automatique via les ReplicaSets
+\end{enumerate}
+
+\textbf{Commandes de test :}
+\begin{lstlisting}[language=bash]
+# Observer les pods et leur distribution
+kubectl get pods -o wide -w
+
+# Tuer un pod pour voir la recreation
+kubectl delete pod <pod-name>
+
+# Tester le load balancing
+while true; do curl http://app.iut.local/api/health; sleep 1; done
+
+# Observer les endpoints du Service
+kubectl get endpoints backend-service
+\end{lstlisting}
+\end{demo}
+
+\subsection{Concepts illustrés}
+
+\subsubsection{Load Balancing}
+
+Le Service distribue les requêtes entre les pods selon un algorithme round-robin :
+
+\begin{lstlisting}[caption=Service avec sélection de plusieurs pods]
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8080
+      targetPort: 3000
+\end{lstlisting}
+
+\textbf{Résultat :} Les requêtes sont distribuées équitablement entre les 3 pods backend.
+
+\subsubsection{High Availability}
+
+Si un pod tombe (crash, nœud défaillant), le Deployment garantit que le nombre de réplicas est maintenu :
+
+\begin{lstlisting}[caption=Deployment avec 3 réplicas]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: api
+          image: backend:v1.0.0
+\end{lstlisting}
+
+\subsubsection{Health Checks}
+
+Les probes permettent à Kubernetes de détecter les pods défaillants :
+
+\begin{lstlisting}[caption=Liveness et Readiness Probes]
+containers:
+  - name: api
+    image: backend:v1.0.0
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 3000
+      initialDelaySeconds: 5
+      periodSeconds: 3
+\end{lstlisting}
+
+\textbf{Différence :}
+\begin{itemize}
+    \item \textbf{Liveness} : Si échec, Kubernetes redémarre le pod
+    \item \textbf{Readiness} : Si échec, Kubernetes retire le pod des endpoints (plus de trafic)
+\end{itemize}
+
+\newpage
+
+\section{Synthèse et Points Clés}
+
+\subsection{Récapitulatif Labels vs Annotations}
+
+\begin{itemize}
+    \item Les \textbf{labels} sont utilisés pour la sélection (selectors) $\rightarrow$ influencent le comportement
+    \item Les \textbf{annotations} ne servent PAS à la sélection $\rightarrow$ métadonnées techniques
+    \item Utilisez une \textbf{nomenclature cohérente} pour éviter les collisions
+\end{itemize}
+
+\subsection{Récapitulatif Ingress / Services / Pods}
+
+\begin{itemize}
+    \item \textbf{Ingress (objet)} : Décrit les règles de routage
+    \item \textbf{Ingress Controller} : Implémente réellement ces règles (nginx, traefik...)
+    \item \textbf{Service} : Abstraction qui cible des pods via labels
+    \item \textbf{Pods} : Instances de l'application
+    \item \textbf{NetworkPolicy} : Contrôle du trafic Egress (sortant) pour micro-segmentation
+\end{itemize}
+
+\subsection{Récapitulatif Volumes}
+
+\begin{itemize}
+    \item \textbf{Déclaration} dans \texttt{spec.volumes} (niveau pod)
+    \item \textbf{Montage} dans \texttt{volumeMounts} (niveau conteneur)
+    \item \textbf{Non persistants} : emptyDir, ConfigMap, Secret (cycle de vie lié au pod)
+    \item \textbf{Persistants} : PV/PVC (découplés du pod, conservent les données)
+    \item \textbf{Stateless} : Pas besoin de PVC
+    \item \textbf{Stateful} : Nécessite PVC pour les données (BDD, fichiers)
+\end{itemize}
+
+\subsection{Questions pour auto-évaluation}
+
+\begin{enumerate}
+    \item Quelle est la différence entre un label et une annotation ?
+    \item Que se passe-t-il si vous créez un Ingress sans déployer d'Ingress Controller ?
+    \item Expliquez le flux complet d'une requête HTTP de l'utilisateur jusqu'au pod.
+    \item Quelle est la différence entre \texttt{spec.volumes} et \texttt{volumeMounts} ?
+    \item Pourquoi utiliser un PVC au lieu d'un emptyDir pour une base de données ?
+    \item Qu'est-ce qu'une NetworkPolicy Egress et à quoi sert-elle ?
+    \item Comment un Service sait quels pods cibler ?
+\end{enumerate}
+
+\newpage
+
+\section{Pour aller plus loin}
+
+\subsection{Service Mesh (Istio)}
+
+Les Service Mesh ajoutent une couche de gestion avancée du trafic :
+\begin{itemize}
+    \item \textbf{mTLS automatique} : Chiffrement entre services
+    \item \textbf{Observabilité} : Métriques, traces, logs distribués
+    \item \textbf{Traffic management} : Retry, timeout, circuit breaker
+    \item \textbf{Déploiements avancés} : Canary, blue/green
+\end{itemize}
+
+\subsection{Gateway API (successeur d'Ingress)}
+
+La nouvelle Gateway API remplace progressivement Ingress avec plus de fonctionnalités :
+\begin{itemize}
+    \item Support de TCP/UDP (pas seulement HTTP)
+    \item Séparation des rôles (admin vs développeur)
+    \item Routage plus avancé
+\end{itemize}
+
+\subsection{StorageClass et provisionnement dynamique}
+
+Les StorageClass permettent le provisionnement automatique de volumes :
+
+\begin{lstlisting}[caption=StorageClass pour provisionnement dynamique]
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-ssd
+  replication-type: regional-pd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: database-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd
+\end{lstlisting}
+
+Le PV est créé automatiquement par le provisioner cloud (GCE, AWS, Azure).
+
+\subsection{Ressources complémentaires}
+
+\begin{itemize}
+    \item Documentation officielle Kubernetes : \url{https://kubernetes.io/docs/}
+    \item Kubernetes Patterns (livre) : O'Reilly
+    \item Tutoriels interactifs : \url{https://www.katacoda.com/courses/kubernetes}
+    \item Certifications : CKA (Certified Kubernetes Administrator), CKAD (Developer)
+\end{itemize}
+
+\newpage
+
+\section*{Conclusion}
+
+Ce cours magistral a consolidé trois piliers essentiels de Kubernetes :
+
+\begin{enumerate}
+    \item \textbf{Labels et Annotations} : Comprendre leur rôle distinct et adopter une nomenclature cohérente
+    \item \textbf{Ingress / Services / Pods} : Maîtriser le flux complet du trafic réseau et la distinction Ingress objet vs Controller
+    \item \textbf{Volumes} : Différencier volumes éphémères et persistants pour architecturer correctement vos applications
+\end{enumerate}
+
+\vspace{1cm}
+
+\begin{center}
+\textbf{\large Ces concepts sont FONDAMENTAUX et seront évalués.}
+
+\vspace{0.5cm}
+
+Assurez-vous de les maîtriser avant le contrôle continu !
+\end{center}
+
+\vspace{1cm}
+
+\textbf{Prochaines étapes :}
+\begin{itemize}
+    \item Pratiquer avec les exemples du dépôt GitLab (chapitre 3)
+    \item Expérimenter avec Kind/Minikube sur vos machines
+    \item Poser vos questions lors des TD/TP
+\end{itemize}
+
+\end{document}

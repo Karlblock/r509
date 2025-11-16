@@ -1,0 +1,23 @@
+\frametitle{Health Checks - Probes}
+\begin{lstlisting}[language=yaml]
+containers:
+  - name: api
+    image: backend:v1
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 3000
+      initialDelaySeconds: 10
+      periodSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /ready
+        port: 3000
+      initialDelaySeconds: 5
+\end{lstlisting}
+
+    \textbf{Différence :}
+    \begin{itemize}
+        \item \textbf{Liveness} : Échec $\rightarrow$ redémarrage pod
+        \item \textbf{Readiness} : Échec $\rightarrow$ retrait des endpoints
+    \end{itemize}

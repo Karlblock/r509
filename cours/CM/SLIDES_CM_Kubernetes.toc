@@ -1,0 +1,7 @@
+\babel@toc {french}{}\relax 
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@sectionintoc {2}{Labels et Annotations}{4}{0}{2}
+\beamer@sectionintoc {3}{Ingress, Services et Pods}{15}{0}{3}
+\beamer@sectionintoc {4}{Volumes - Persistance}{30}{0}{4}
+\beamer@sectionintoc {5}{Démonstration}{42}{0}{5}
+\beamer@sectionintoc {6}{Synthèse}{45}{0}{6}

@@ -1,0 +1,53 @@
+\babel@toc {french}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
+\contentsline {section}{\numberline {2}Labels et Annotations}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Présentation générale}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Les Labels (Étiquettes)}{4}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Définition et caractéristiques}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Exemples pratiques}{4}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Nomenclature recommandée}{5}{subsubsection.2.2.3}%
+\contentsline {subsection}{\numberline {2.3}Les Annotations}{5}{subsection.2.3}%
+\contentsline {subsubsection}{\numberline {2.3.1}Définition et usage}{5}{subsubsection.2.3.1}%
+\contentsline {subsubsection}{\numberline {2.3.2}Exemples d'utilisation}{6}{subsubsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.4}Tableau récapitulatif}{7}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Ingress, Services et Pods - Synthèse critique}{8}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Vue d'ensemble du flux réseau}{8}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Distinction fondamentale : Ingress vs Ingress Controller}{8}{subsection.3.2}%
+\contentsline {subsubsection}{\numberline {3.2.1}Objet Ingress (règles de routage)}{8}{subsubsection.3.2.1}%
+\contentsline {subsubsection}{\numberline {3.2.2}Ingress Controller (implémentation)}{8}{subsubsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.3}Le rôle des Services}{9}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Flux complet illustré}{10}{subsection.3.4}%
+\contentsline {subsection}{\numberline {3.5}Gestion du trafic sortant (Egress)}{10}{subsection.3.5}%
+\contentsline {subsubsection}{\numberline {3.5.1}NetworkPolicy pour Egress}{10}{subsubsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.6}Solutions avancées (hors scope BUT)}{11}{subsection.3.6}%
+\contentsline {subsubsection}{\numberline {3.6.1}Service Mesh (Istio, Linkerd)}{11}{subsubsection.3.6.1}%
+\contentsline {section}{\numberline {4}Volumes - Persistance des Données}{12}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Introduction}{12}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Déclaration vs Montage}{12}{subsection.4.2}%
+\contentsline {subsubsection}{\numberline {4.2.1}Deux étapes distinctes}{12}{subsubsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.3}Volumes non persistants (éphémères)}{12}{subsection.4.3}%
+\contentsline {subsubsection}{\numberline {4.3.1}EmptyDir}{12}{subsubsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.2}ConfigMap et Secret (lecture seule)}{13}{subsubsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.4}Volumes persistants (PV/PVC)}{14}{subsection.4.4}%
+\contentsline {subsubsection}{\numberline {4.4.1}Architecture PV/PVC}{14}{subsubsection.4.4.1}%
+\contentsline {subsubsection}{\numberline {4.4.2}PersistentVolume (PV)}{14}{subsubsection.4.4.2}%
+\contentsline {subsubsection}{\numberline {4.4.3}PersistentVolumeClaim (PVC)}{15}{subsubsection.4.4.3}%
+\contentsline {subsubsection}{\numberline {4.4.4}Utilisation dans un Pod}{15}{subsubsection.4.4.4}%
+\contentsline {subsection}{\numberline {4.5}Tableau comparatif}{16}{subsection.4.5}%
+\contentsline {subsection}{\numberline {4.6}Scénarios stateful vs stateless}{16}{subsection.4.6}%
+\contentsline {section}{\numberline {5}Démonstration pratique}{17}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Application front + back pour illustration}{17}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Concepts illustrés}{17}{subsection.5.2}%
+\contentsline {subsubsection}{\numberline {5.2.1}Load Balancing}{17}{subsubsection.5.2.1}%
+\contentsline {subsubsection}{\numberline {5.2.2}High Availability}{18}{subsubsection.5.2.2}%
+\contentsline {subsubsection}{\numberline {5.2.3}Health Checks}{18}{subsubsection.5.2.3}%
+\contentsline {section}{\numberline {6}Synthèse et Points Clés}{19}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Récapitulatif Labels vs Annotations}{19}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Récapitulatif Ingress / Services / Pods}{19}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Récapitulatif Volumes}{19}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Questions pour auto-évaluation}{19}{subsection.6.4}%
+\contentsline {section}{\numberline {7}Pour aller plus loin}{20}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Service Mesh (Istio)}{20}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Gateway API (successeur d'Ingress)}{20}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}StorageClass et provisionnement dynamique}{20}{subsection.7.3}%
+\contentsline {subsection}{\numberline {7.4}Ressources complémentaires}{20}{subsection.7.4}%
